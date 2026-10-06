@@ -336,7 +336,13 @@ local data: Types.Cutscene = {
 								duration = 8,
 							},
 						}),
-						cue({ at = 1.0, music = "ending_dawn", musicVolume = 0.6, musicFade = 2 }),
+						cue({ at = 1.0, sfx = "ending_dawn", sfxVolume = 0.6 }),
+						cue({
+							at = 1.0,
+							music = "music_ending_dawn",
+							musicVolume = 0.6,
+							musicFade = 2,
+						}),
 					},
 				}),
 				shot({

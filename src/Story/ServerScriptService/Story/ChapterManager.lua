@@ -125,6 +125,17 @@ function ChapterManager.run(startChapter: number, startStep: string?)
 	StoryFlags.get().startedAt = os.clock()
 	workspace:SetAttribute("StartChapter", startChapter) -- SPEEDRUN / NO_DEATHS need the whole story
 	workspace:SetAttribute("StoryStarted", true) -- the join loading screen closes
+	if startChapter > 1 then
+		-- replaying a single chapter (menu CHAPTERS): everybody gets the lantern from chapter 1
+		for _, p in game:GetService("Players"):GetPlayers() do
+			if
+				not InventoryService.has(p, "lantern")
+				and not InventoryService.has(p, "glowing_lantern")
+			then
+				InventoryService.add(p, "lantern", 1)
+			end
+		end
+	end
 	for index = startChapter, 6 do
 		local chapter = chapterModule(index)
 		if not chapter then

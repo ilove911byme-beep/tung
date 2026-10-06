@@ -176,6 +176,8 @@ def check_story():
     fx = read("src", "Story", "StarterPlayerScripts", "Gameplay", "WorldFx.lua")
     fx_kinds = set(re.findall(r'^\t([a-zA-Z]+) = ', fx.split("local HANDLERS")[1], re.M))
     models = set(re.findall(r'^\t([A-Za-z]+) = \{\n\t\tkind = ', read("src", "Shared", "RigSpecs.lua"), re.M))
+    md = read("src", "Story", "StarterPlayerScripts", "Audio", "MusicDirector.lua")
+    music_states = set(re.findall(r'^\t([a-z]+) = ', md.split("MusicDirector.States = {")[1].split("}")[0], re.M))
     cutscenes = {}
     for name in os.listdir(os.path.join(SHARED, "Cutscenes")):
         if name.endswith(".lua"):
@@ -201,6 +203,8 @@ def check_story():
                 need("objective", v, objectives)
             for v in re.findall(r':award\(\s*"([A-Za-z0-9_]+)"', src):
                 need("achievement", v, achievements)
+            for v in re.findall(r':music\(\s*"([a-zA-Z_]+)"', src):
+                need("music state", v, music_states)
             for v in re.findall(r':preset\(\s*"([a-z_]+)"', src):
                 need("preset", v, presets)
             for v in re.findall(r'(?:ctx:sfx|:telegraph\([^,]+,[^,]+),?\s*"([a-z0-9_]+)"', src):

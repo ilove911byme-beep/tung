@@ -5,6 +5,7 @@
 local Players = game:GetService("Players")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 
 ReplicatedFirst:RemoveDefaultLoadingScreen()
@@ -22,6 +23,8 @@ if arriving then
 end
 local started = os.clock()
 local loadedAt: number? = nil
+-- in Studio the test stage never starts a chapter on its own: do not block it for long
+local maxAfterLoad = if RunService:IsStudio() then 6 else 35
 while true do
 	if game:IsLoaded() and not loadedAt then
 		loadedAt = os.clock()
@@ -32,7 +35,7 @@ while true do
 		p += math.min((os.clock() - loadedAt) / 30, 0.35)
 	end
 	handle.setProgress(if storyStarted then 1 else p)
-	if storyStarted or (loadedAt and os.clock() - loadedAt > 35) then
+	if storyStarted or (loadedAt and os.clock() - loadedAt > maxAfterLoad) then
 		break
 	end
 	task.wait(0.1)

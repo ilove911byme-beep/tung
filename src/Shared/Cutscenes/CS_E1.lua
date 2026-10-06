@@ -184,7 +184,8 @@ local function dawnShots(tungShot: Types.Shot): { Types.Shot }
 			},
 			cues = {
 				cue({ clockTo = 6.3, clockTime = 8 }),
-				cue({ music = "ending_dawn", musicVolume = 0.6, musicFade = 0.5 }),
+				cue({ sfx = "ending_dawn", sfxVolume = 0.8 }),
+				cue({ music = "music_ending_dawn", musicVolume = 0.6, musicFade = 0.5 }),
 				cue({
 					world = "fireflies",
 					worldParams = {
