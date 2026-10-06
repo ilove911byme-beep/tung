@@ -123,6 +123,7 @@ function ChapterManager.run(startChapter: number, startStep: string?)
 		StoryFlags.reset()
 	end
 	StoryFlags.get().startedAt = os.clock()
+	workspace:SetAttribute("StartChapter", startChapter) -- SPEEDRUN / NO_DEATHS need the whole story
 	for index = startChapter, 6 do
 		local chapter = chapterModule(index)
 		if not chapter then

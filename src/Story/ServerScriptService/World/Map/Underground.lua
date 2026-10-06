@@ -15,6 +15,11 @@ local Underground = {}
 -- tools/map_preview sets this to flood-fill the carved air and report unreachable rooms
 Underground.verify = false
 
+-- the maze graph (cell centers in blocks and their open neighbours), filled by build(); the
+-- chapter 5 shadow walks it
+export type MazeCell = { x: number, z: number, links: { number } }
+Underground.mazeCells = {} :: { MazeCell }
+
 local X0, X1 = 94, 160
 local Z0, Z1 = 4, 62
 local Y0, Y1 = -30, MapData.TerrainBase
@@ -78,6 +83,13 @@ local function maze()
 	local function cellPos(i: number, j: number): (number, number)
 		return M.x + 1 + i * 3, M.z + 1 + j * 3
 	end
+	table.clear(Underground.mazeCells)
+	for j = 0, rows - 1 do
+		for i = 0, cols - 1 do
+			local x, z = cellPos(i, j)
+			Underground.mazeCells[j * cols + i + 1] = { x = x + 1, z = z + 1, links = {} }
+		end
+	end
 	local function open(i: number, j: number)
 		local x, z = cellPos(i, j)
 		carve(x, M.y, z, 2, M.h, 2)
@@ -102,6 +114,9 @@ local function maze()
 			local ni, nj = pick[1], pick[2]
 			visited[nj * cols + ni] = true
 			open(ni, nj)
+			local a, b = j * cols + i + 1, nj * cols + ni + 1
+			table.insert(Underground.mazeCells[a].links, b)
+			table.insert(Underground.mazeCells[b].links, a)
 			-- knock down the wall between the two cells
 			local x1, z1 = cellPos(i, j)
 			local x2, z2 = cellPos(ni, nj)

@@ -30,10 +30,14 @@ local Objectives: { [string]: string } = {
 	C4_DETOUR = "Go round the long way: jump across the narrow end of the gorge",
 	-- Chapter 5
 	C5_CODE = "Open the mine door",
+	C5_DOWN = "Climb down into the mine",
 	C5_RIDE = "Ride the minecarts: lean and duck!",
+	C5_LAB = "Follow the light down to the lab",
+	C5_DIARY = "Find Lirili's diary in the lab",
 	C5_GEAR1 = "Gear 1: pull the levers in the right order",
 	C5_GEAR2 = "Gear 2: cross the lava lake",
 	C5_GEAR3 = "Gear 3: find the gear in the dark maze",
+	C5_CAVE = "Climb down into the big cave",
 	C5_CRUDELINO = "Survive Crudelino",
 	C5_FLARES = "Mark Crudelino with flares (%d/3 hits)",
 	C5_STALACTITES = "Lure Crudelino under the stalactites and knock them down (%d/3)",
@@ -41,7 +45,7 @@ local Objectives: { [string]: string } = {
 	-- Chapter 6
 	C6_SKYPATH = "Cross the floating blocks to the clock tower",
 	C6_DARK = "Carry the Truth Gears to the tower inside the lantern light",
-	C6_CLIMB = "Climb the tower!",
+	C6_CLIMB = "Climb the tower! (%d s)",
 	C6_MECHANISM = "Insert the gears and turn the hands together!",
 	C6_CHOICE = "Shut it down… or let it stay?",
 	-- general

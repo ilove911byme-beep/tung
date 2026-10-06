@@ -154,10 +154,95 @@ def build():
     return "\n".join(parts)
 
 
+def read(*parts):
+    with open(os.path.join(ROOT, *parts), encoding="utf-8") as fh:
+        return fh.read()
+
+
+def check_story():
+    """Every id a chapter / system script names (lines, objectives, cutscenes and their entries,
+    achievements, presets, sounds, items, map points, world effects, models) must exist."""
+    voice = set()
+    for name in os.listdir(os.path.join(SHARED, "VoiceLines")):
+        voice |= set(re.findall(r'id = "([A-Za-z0-9_]+)"', read("src", "Shared", "VoiceLines", name)))
+    objectives = set(re.findall(r'^\s*([A-Z0-9_]+) = "', read("src", "Shared", "StoryData", "Objectives.lua"), re.M))
+    achievements = set(re.findall(r'a\(\s*"([A-Z0-9_]+)"', read("src", "Shared", "Achievements.lua")))
+    presets = set(re.findall(r'^\t([a-z_]+) = \{', read("src", "Story", "ServerScriptService", "Systems", "AtmosphereService.lua"), re.M))
+    sounds = set(re.findall(r'^\s*([a-z0-9_]+) = P', read("src", "Shared", "SoundIds.lua"), re.M))
+    items = set(re.findall(r'^\t([a-z_]+) = \{', read("src", "Shared", "StoryData", "Items.lua"), re.M))
+    mapdata = read("src", "Shared", "World", "MapData.lua")
+    points = set(re.findall(r'^\t([A-Za-z0-9]+) = \{ x = ', mapdata, re.M))
+    anchors = set(re.findall(r'^\t(Anchor_[A-Za-z_]+) = ', read("src", "Shared", "World", "Anchors.lua"), re.M))
+    fx = read("src", "Story", "StarterPlayerScripts", "Gameplay", "WorldFx.lua")
+    fx_kinds = set(re.findall(r'^\t([a-zA-Z]+) = ', fx.split("local HANDLERS")[1], re.M))
+    models = set(re.findall(r'^\t([A-Za-z]+) = \{\n\t\tkind = ', read("src", "Shared", "RigSpecs.lua"), re.M))
+    cutscenes = {}
+    for name in os.listdir(os.path.join(SHARED, "Cutscenes")):
+        if name.endswith(".lua"):
+            cutscenes[name[:-4]] = read("src", "Shared", "Cutscenes", name)
+    errors = []
+    base = os.path.join(ROOT, "src", "Story", "ServerScriptService")
+    for dirpath, _, files in os.walk(base):
+        for name in files:
+            if not name.endswith(".lua") or "Dev" in dirpath:
+                continue
+            src = read(os.path.relpath(os.path.join(dirpath, name), ROOT))
+            where = name
+
+            def need(kind, value, pool):
+                if value not in pool:
+                    errors.append(f"FAIL story {where}: unknown {kind} {value}")
+
+            for v in re.findall(r':say\(\s*"([A-Za-z0-9_]+)"', src):
+                need("line", v, voice)
+            for v in re.findall(r'task\.spawn\(ctx\.say, ctx, "([A-Za-z0-9_]+)"', src):
+                need("line", v, voice)
+            for v in re.findall(r':objective\(\s*"([A-Za-z0-9_]+)"', src):
+                need("objective", v, objectives)
+            for v in re.findall(r':award\(\s*"([A-Za-z0-9_]+)"', src):
+                need("achievement", v, achievements)
+            for v in re.findall(r':preset\(\s*"([a-z_]+)"', src):
+                need("preset", v, presets)
+            for v in re.findall(r'(?:ctx:sfx|:telegraph\([^,]+,[^,]+),?\s*"([a-z0-9_]+)"', src):
+                need("sound", v, sounds)
+            for v in re.findall(r'ctx:sfx\(\s*"([a-z0-9_]+)"', src):
+                need("sound", v, sounds)
+            for v in re.findall(r'inv\.(?:add|remove|has|count|onUse)\([^"]*"([a-z_]+)"', src):
+                need("item", v, items)
+            for v in re.findall(r':(?:point|ground)\(\s*"([A-Za-z0-9]+)"(?!\s*\.\.)', src):
+                need("map point", v, points)
+            for v in re.findall(r'\bpoint = "([A-Za-z0-9]+)"', src):
+                need("map point", v, points)
+            for v in re.findall(r'\banchor = "(Anchor_[A-Za-z_]+)"', src):
+                need("anchor", v, anchors)
+            for v in re.findall(r'(?:ctx:glitch|Hud\.worldFx)\(\s*"([a-zA-Z]+)"', src):
+                need("world effect", v, fx_kinds)
+            for v in re.findall(r'worldFxFor\([^,]+,\s*"([a-zA-Z]+)"', src):
+                need("world effect", v, fx_kinds)
+            for v in re.findall(r'\b(?:model|animated)\(\s*"([A-Za-z]+)"', src):
+                need("model", v, models)
+            for cs, entry in re.findall(r':cutscene\(\s*"(CS_[A-Z0-9]+)"(?:,\s*"([a-zA-Z]+)")?', src):
+                if cs not in cutscenes:
+                    errors.append(f"FAIL story {where}: unknown cutscene {cs}")
+                elif entry and not re.search(r'\b' + entry + r' = \{', cutscenes[cs]):
+                    errors.append(f"FAIL story {where}: cutscene {cs} has no entry {entry}")
+            # entries chosen with if/else inside :cutscene(...)
+            for cs, rest in re.findall(r':cutscene\(\s*"(CS_[A-Z0-9]+)",\s*(if [^\n]+)', src):
+                for entry in re.findall(r'(?:then|else)\s+"([a-zA-Z]+)"', rest):
+                    if cs in cutscenes and not re.search(r'\b' + entry + r' = \{', cutscenes[cs]):
+                        errors.append(f"FAIL story {where}: cutscene {cs} has no entry {entry}")
+    for e in errors:
+        print(e)
+    print(f"story scripts checked, {len(errors)} problems")
+    return not errors
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--luau", required=True)
     args = ap.parse_args()
+    if not check_story():
+        raise SystemExit(1)
     code = build()
     with tempfile.NamedTemporaryFile("w", suffix=".luau", delete=False) as f:
         f.write(code)

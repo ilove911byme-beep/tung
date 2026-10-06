@@ -17,7 +17,7 @@
 | 2 — MapBuilder | ✅ | см. git log |
 | 3 — Пролог + главы 1–2, CS-00…CS-06 | ✅ | см. git log |
 | 4 — главы 3–4, CS-07…CS-14 | ✅ | см. git log |
-| 5 — главы 5–6, CS-15…CS-23, концовки, служебные | ⏳ | |
+| 5 — главы 5–6, CS-15…CS-23, концовки, служебные | ✅ | см. git log |
 | 5.5 — меню, лобби, очередь, загрузка, телепорт, мемы | ⏳ | |
 | 6 — полировка | ⏳ | |
 
@@ -201,3 +201,62 @@ A-GIALLINO_FALL_SMALL ✅, A-PATAPIM_RISE ✅, A-ROOTS_BRIDGE ✅, A-KNEEL_SLOW 
 - check_data теперь проверяет диалоги, а `scripts/check.sh` падает при ошибках данных.
 ⚠️ Known issues: проверено статически (типы, данные, тайминги, связность). Баланс боя Negatino (скорость
 14, кулдаун касания 3 с) и паркуров не проверен руками.
+
+## Phase 5 — главы 5–6, концовки ✅
+✅ Done: глава 5 — кодовый замок (голосование 4 вариантов, верный 67 по подсказке Narrator, неверный —
+реплика) → CS-15, дверь открывается; спуск по шахте; вагонетки: сервер публикует только время старта и
+места, `MinecartClient` рисует все вагонетки локально по `Shared/World/TrackPath` от общих серверных часов
+и ведёт своего персонажа; сзади катится стена глитчлингов; 7 QTE (3 развилки «влево/вправо» к основной
+ветке, 4 балки «пригнись»), ошибка = 40 урона, вагонетка опрокидывается, игрок 2.6 с бежит рядом,
+PERFECT_RIDE; лаборатория → CS-16 (95 с), застывшая Лирили остаётся; дневник Лирили (подсказка 3-1-4-2),
+рычаги — неверный порядок = шипы 20 урона и сброс; лава-паркур (рушащиеся через 2 с блоки, движущийся
+блок, лава = Downed, тайный уступ и мостики появляются, только если Cappuccino не заперт и показывает их,
+FLOOR_IS_LAVA за проход без падений); тёмный лабиринт (туман, тень ходит по графу лабиринта, идёт на
+игрока ближе 28 studs, касание 30 урона, сердцебиение рядом); чекпоинт после каждой шестерёнки; бой
+Crudelino: CS-17 + карточка, фаза 1 — 7 рывков к ближайшему (визг 1 с с красной подсветкой, 45 урона,
+ломает колонны, UNTOUCHABLE), фаза 2 — сигнальные ракеты у стен → Bombardiro пролетает над дырой и
+сбрасывает бомбу на метку (3 попадания), если Bombardiro заперт — камни и 3 сталактита; CS-18 (только если
+Bombardiro свободен) → CS-19 → побег: рушащаяся спираль и лиана вверх по дыре в небо, 120 с, обвалы;
+BEAT_CRUDELINO, UNTOUCHABLE, CHAPTER_5.
+Глава 6 — CS-20, карточка GIALLINO TOTALE, огромный куб в небе поворачивает к башне нужное лицо по фазам;
+NO_ONE_JAILED; фаза 1 (Falsino) — путь по летающим блокам от холма шахты к деревне, каждый 3-й шаг — пара
+«настоящий + ложный» (ложный без коллизии, мерцает край), падение 30 урона и возврат на чекпоинт; фаза 2
+(Negatino) — тьма, носители шестерёнок медленнее (11), вне света чужого фонаря (свой — только в соло)
+теряют HP, волны глитчлингов, цель — дверь башни; фаза 3 (Crudelino) — CS-21 (free / freeNoPatapim /
+jailed), Tung держит дверь (или дверь падает через 30 с и лезут глитчлинги), лестница рушится снизу вверх,
+удары лица сквозь стены с красной подсветкой за 1 с (30 урона), 100 с; фаза 4 — 3 шестерёнки в гнёзда →
+общий QTE (провал = плохая концовка) → CS-22 → CS-23 (main или secret при 7 настоящих уликах +
+riddleCorrect + spottedFalsino + никто не заперт) → CS-E1 (free/jailed) + ENDING_DAWN / CS-E2 +
+ENDING_ENDLESS_NIGHT / CS-E3 main → титры → CS-E3 post + ENDING_SAHUR; SPEEDRUN (<35 мин) и NO_DEATHS
+только при прохождении с главы 1; концовка уходит в `PartyService.setReturnData("ending")`.
+📁 Files: `src/Shared/Cutscenes/CS_{15..23,E1,E2,E3}.lua`, `src/Shared/VoiceLines/{Chapter5,Chapter6,Endings}.lua`,
+`src/Shared/Animations/A_{BRACE_DOOR,CARVE,CRUDELINO_DASH,FLY,FROZEN_STEP,GEARS_TURN,HOLD_UP,LEVER_PULL,
+LEVER_THROW,LIE_DOWN,RELEASE_TIME,SCALE_4,SCALE_6,SIT_GROUND,SLIDE_DOWN_DOOR,TOTALE_ROTATE,TOTALE_SIZE,
+WALK_TIRED}.lua`, `src/Shared/World/TrackPath.lua`, `src/Story/StarterPlayerScripts/Gameplay/MinecartClient.lua`,
+`src/Story/StarterPlayerScripts/UI/StoryScreens.lua` (старый экран YES/NO, ролл имён, титры),
+`src/Story/ServerScriptService/Story/Chapters/Chapter{5,6}.lua`, правки WorldFx (keypadDigits, doorOpen,
+clockHands, fireflies, tunnelLamps, oldScreen, nameRoll, credits), RigSpecs (Gears, Bomb, TruthGear, LampPlate,
+WallChunk, CuckooClock…), Underground (граф лабиринта), `tools/check_data.py` (новая проверка скриптов глав).
+🎬 Cutscene checklist: CS-15 ✅, CS-16 ✅ (флэшбек 6a–6d, старый экран, лифт Балерины, рычаг, белая волна),
+CS-17 ✅, CS-18 ✅, CS-19 ✅, CS-20 ✅, CS-21 ✅ (3 варианта), CS-22 ✅, CS-23 ✅ (main/secret + голосование),
+CS-E1 ✅ (free/jailed), CS-E2 ✅, CS-E3 ✅ (main + post), служебные CS-DOWN / CS-DEAD / CS-REVIVE ✅ (фаза 1a);
+карточки CRUDELINO и GIALLINO TOTALE ✅. Анимации: A-FROZEN_STEP, A-RELEASE_TIME, A-LEVER_THROW, A-FLY,
+A-LIE_DOWN, A-CRUDELINO_DASH, A-TOTALE_SIZE, A-TOTALE_ROTATE, A-BRACE_DOOR, A-SLIDE_DOWN_DOOR, A-CARVE,
+A-GEARS_TURN, A-SCALE_4/6, A-HOLD_UP, A-SIT_GROUND, A-WALK_TIRED ✅.
+🧪 How to test (Studio): `/chapter 5` → E на кодовом замке у входа в шахту (голос «6 7»), спуск по лестнице
+→ вагонетки (A/D, Ctrl или кнопки), `/chapter 5 gear1` (дневник на верстаке, рычаги), `/chapter 5 gear2`,
+`/chapter 5 gear3`, `/chapter 5 crudelino` (ракеты — подобрать у стен и использовать из инвентаря рядом с
+Crudelino после его рывка; с `/flags jailed Bombardiro` — камни). `/chapter 6`, `/chapter 6 skypath`,
+`/chapter 6 darkness`, `/chapter 6 climb`, `/chapter 6 finale`. Катсцены: `/cs CS_15` … `/cs CS_23`,
+`/cs CS_E1`, `/cs CS_E2`, `/cs CS_E3`.
+Решения (сам):
+- Вагонетки рисуются на клиентах (плавно, без серверной физики); урон/QTE/результаты — на сервере.
+- Ошибка QTE: вагонетка опрокидывается на 2.6 с, игрок бежит рядом и возвращается в вагонетку.
+- Тайный путь Cappuccino: уступ у северной стены + два мостика; без Cappuccino их нет физически.
+- После шестерёнки 2 — затемнение и переход к лабиринту (иначе половина группы осталась бы за лавой).
+- Фаза 2 Crudelino: после каждого рывка он стоит 3–4 с — окно для метки/сталактита.
+- Плохой исход общего QTE в фазе 4 = концовка ENDLESS NIGHT (сценарий: «проиграли финал»).
+- CS-E1 играет и при запертом Tung (вариант «jailed»: он выходит из амбара) — хорошая концовка по выбору.
+⚠️ Known issues: проверено статически (типы, данные, тайминги, ссылки глав на реплики/цели/катсцены/
+звуки/точки). Баланс (скорость вагонеток 3.5 блока/с, окна QTE 1.6 с, рывки 70 studs/s, урон тьмы) и
+высоты паркуров по небу/дыре не проверены в движке. Возврат в лобби после титров — в фазе 5.5.
