@@ -114,8 +114,17 @@ function VoteService.init()
 	end)
 end
 
+--- Ends every open vote now (party wipe / restart).
+function VoteService.cancelAll()
+	for _, vote in active do
+		if not vote.closed then
+			vote.done:Fire()
+		end
+	end
+end
+
 --- Runs a vote and yields until it ends. Returns the winning option index and id.
-function VoteService.run(request: VoteRequest): (number, string)
+function VoteService.run(request: VoteRequest): (number, string, { [Player]: string })
 	assert(#request.options > 0, "vote without options")
 	local now = workspace:GetServerTimeNow()
 	local endsAt = request.endsAt or (now + (request.seconds or Config.Vote.Seconds))
@@ -158,7 +167,11 @@ function VoteService.run(request: VoteRequest): (number, string)
 	end
 	active[vote.id] = nil
 	vote.done:Destroy()
-	return winner, request.options[winner].id
+	local byPlayer: { [Player]: string } = {}
+	for p, index in vote.choices do
+		byPlayer[p] = request.options[index].id
+	end
+	return winner, request.options[winner].id, byPlayer
 end
 
 return VoteService

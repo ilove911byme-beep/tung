@@ -26,6 +26,7 @@ local VoiceService = {}
 export type SayOptions = {
 	speakerModel: Model?, -- 3D source; nil = 2D
 	tokens: { [string]: string }?, -- "[Hiding spot]" etc.
+	noSubtitle: boolean?, -- the dialogue box shows the text itself
 }
 
 type CacheEntry = { tts: AudioTextToSpeech, state: "loading" | "ready" | "failed" }
@@ -267,7 +268,22 @@ function VoiceService.say(lineId: string, opts: SayOptions?): number
 		return 0
 	end
 	local text = VoiceService.personalize(line.text, o.tokens)
-	local duration = Subtitles.show(line.speaker, text, blipper(line.speaker))
+	local duration: number
+	if o.noSubtitle then
+		local letters = utf8.len(text) or #text
+		duration = letters / Config.Voice.SubtitleCharsPerSecond + Config.Voice.SubtitleHoldSeconds
+		local blip = blipper(line.speaker)
+		if blip then
+			task.spawn(function()
+				for i = 1, letters do
+					blip(i)
+					task.wait(1 / Config.Voice.SubtitleCharsPerSecond)
+				end
+			end)
+		end
+	else
+		duration = Subtitles.show(line.speaker, text, blipper(line.speaker))
+	end
 	if not Settings.get().voices then
 		return duration
 	end

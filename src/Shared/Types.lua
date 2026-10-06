@@ -82,7 +82,16 @@ export type Transition = {
 	seconds: number?,
 }
 
-export type GradePreset = "DUSK" | "NIGHT" | "NIGHT_DEEP" | "FLASHBACK" | "GLITCH" | "DAWN" | "CAVE"
+-- "KEEP" leaves the current grading alone (service cutscenes CS-DOWN / CS-DEAD / CS-REVIVE).
+export type GradePreset =
+	"DUSK"
+	| "NIGHT"
+	| "NIGHT_DEEP"
+	| "FLASHBACK"
+	| "GLITCH"
+	| "DAWN"
+	| "CAVE"
+	| "KEEP"
 
 -- "off" is a utility state (screen powered off), not an expression from cutscenes.md.
 export type FaceId =
@@ -214,6 +223,11 @@ export type Cue = {
 	musicFade: number?,
 	musicVolume: number?,
 	line: string?, -- VoiceLines id
+	vignette: Color3?, -- tint the screen edges (CS-DOWN red), nil = unchanged
+	clockTo: number?, -- time-lapse: tween Lighting.ClockTime to this
+	clockTime: number?, -- seconds the time-lapse takes
+	world: string?, -- WorldFx effect name (lights out, shutters, signs...)
+	worldParams: { [string]: any }?,
 }
 
 export type Shot = {

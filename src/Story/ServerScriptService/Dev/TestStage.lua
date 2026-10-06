@@ -305,12 +305,16 @@ local function buildFootstepPatches(parent: Instance)
 end
 
 --- Builds the stage unless a real map (workspace.Map) or a previous stage exists.
-function TestStage.buildIfNeeded()
+--- Returns true when the test stage is in use (no real map).
+function TestStage.buildIfNeeded(): boolean
 	if not RunService:IsStudio() or not Config.Debug.TestStage then
-		return
+		return false
 	end
-	if workspace:FindFirstChild("Map") or workspace:FindFirstChild("TestStage") then
-		return
+	if workspace:FindFirstChild("Map") then
+		return false
+	end
+	if workspace:FindFirstChild("TestStage") then
+		return true
 	end
 	local stage = Instance.new("Folder")
 	stage.Name = "TestStage"
@@ -356,7 +360,8 @@ function TestStage.buildIfNeeded()
 			old:Destroy()
 		end
 	end
-	print("[TestStage] built. Chat: /cs CS_02, /cs CS_05, /cs list, /fx <Effect>")
+	print("[TestStage] built. Chat: /cs <id>, /cs list, /fx <Effect>, /park, /down, /kill, /help")
+	return true
 end
 
 return TestStage

@@ -141,6 +141,7 @@ Strings.Journal = {
 	TabMemories = "Memories",
 	TabNames = "Names",
 	Unverified = "?",
+	ReadAloud = "Read aloud",
 }
 
 Strings.Items = {
@@ -175,6 +176,42 @@ Strings.Prompts = {
 	Talk = "Talk",
 	Open = "Open",
 	Read = "Read",
+	Hide = "Hide",
+	HoldBreath = "Hold your breath!",
+	Chop = "Chop",
+	Buy = "Buy",
+	Search = "Search",
+	Inspect = "Inspect",
+	Light = "Light",
+	Pull = "Pull",
+	Insert = "Insert",
+	Ride = "Get in",
+	Take = "Take",
+	Push = "Push",
+	Fan = "Fan the fire!",
+	AddWood = "Add wood",
+	Enter = "Enter",
+	Throw = "Throw",
+	Code = "Enter code",
+}
+
+Strings.QTE = {
+	Tap = "Mash %s!",
+	Hold = "Hold %s - keep the marker in the green!",
+	Left = "LEFT",
+	Right = "RIGHT",
+	Duck = "DUCK",
+	Party = "Everyone mash %s!",
+	Success = "Nice!",
+	Fail = "Missed!",
+}
+
+Strings.Hud = {
+	Checkpoint = "Checkpoint",
+	Journal = "Journal",
+	Memory = "Memory Page",
+	NewClue = "New clue: %s",
+	PageFound = "Memory Page found (%d/12)",
 }
 
 return Strings

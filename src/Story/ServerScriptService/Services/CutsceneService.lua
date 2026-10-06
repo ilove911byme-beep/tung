@@ -44,7 +44,7 @@ type Run = {
 
 local CutsceneService = {}
 
--- Fired as (cutsceneId, optionId, effects, voters) when an in-cutscene vote ends.
+-- Fired as (cutsceneId, optionId, effects, voters, choiceByPlayer) when an in-cutscene vote ends.
 -- StoryFlags / Achievements (Phase 1b) listen to this.
 local choiceEvent = Instance.new("BindableEvent")
 CutsceneService.ChoiceMade = choiceEvent.Event
@@ -248,6 +248,24 @@ function CutsceneService.isPlaying(): boolean
 	return current ~= nil
 end
 
+--- Stops the running cutscene right away (party wipe / restart). Clients end it as skipped.
+function CutsceneService.abort()
+	local run = current
+	if not run then
+		return
+	end
+	current = nil
+	local endRemote = Remotes.get(Remotes.Names.CutsceneEnd)
+	for _, p in participantList(run) do
+		endRemote:FireClient(p, run.runId, true)
+	end
+	restorePlayers(run)
+	local runtime = run.runtime
+	task.delay(5, function()
+		runtime:Destroy()
+	end)
+end
+
 --- Plays a cutscene for the party and yields until it is over.
 function CutsceneService.play(id: string, opts: PlayOptions?): Result
 	local o: PlayOptions = opts or {}
@@ -305,7 +323,7 @@ function CutsceneService.play(id: string, opts: PlayOptions?): Result
 		})
 	end
 
-	while true do
+	while current == run do
 		local seg = data.segments[segKey]
 		run.segment = segKey
 		run.finished = {}
@@ -318,7 +336,7 @@ function CutsceneService.play(id: string, opts: PlayOptions?): Result
 			for _, option in seg.vote.options do
 				table.insert(options, { id = option.id, text = option.text })
 			end
-			local _, optionId = VoteService.run({
+			local _, optionId, byPlayer = VoteService.run({
 				options = options,
 				voters = participantList(run),
 				endsAt = segStart + (seg.vote.seconds or Config.Vote.Seconds),
@@ -328,7 +346,13 @@ function CutsceneService.play(id: string, opts: PlayOptions?): Result
 			for _, option in seg.vote.options do
 				if option.id == optionId then
 					nextKey = option.next
-					choiceEvent:Fire(data.id, optionId, option.effects or {}, participantList(run))
+					choiceEvent:Fire(
+						data.id,
+						optionId,
+						option.effects or {},
+						participantList(run),
+						byPlayer
+					)
 					print(string.format("[CutsceneService] %s choice: %s", data.id, optionId))
 				end
 			end
@@ -336,7 +360,7 @@ function CutsceneService.play(id: string, opts: PlayOptions?): Result
 			local isLast = nextKey == nil
 			local segEnd = segStart + seg.length
 			local deadline = segEnd + (if isLast then Config.Cutscene.SyncGraceSeconds else 0)
-			while workspace:GetServerTimeNow() < deadline do
+			while workspace:GetServerTimeNow() < deadline and current == run do
 				if run.skipRequested then
 					break
 				end
@@ -366,6 +390,9 @@ function CutsceneService.play(id: string, opts: PlayOptions?): Result
 		end
 	end
 
+	if current ~= run then
+		return result -- aborted
+	end
 	local endRemote = Remotes.get(Remotes.Names.CutsceneEnd)
 	for _, p in participantList(run) do
 		endRemote:FireClient(p, runId, result.skipped)

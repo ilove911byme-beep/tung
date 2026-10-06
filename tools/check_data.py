@@ -32,6 +32,9 @@ EXPECTED = {
         ("main", "5", 21, 26), ("main", "6", 26, 29), ("main", "7", 29, 31), ("main", "8", 31, 40),
         ("main", "9", 40, 43), ("main", "10", 43, 48),
     ],
+    "CS_DOWN": [("main", "1", 0, 2)],
+    "CS_DEAD": [("main", "1", 0, 2), ("main", "2", 2, 5)],
+    "CS_REVIVE": [("main", "1", 0, 2)],
 }
 
 EFFECTS = ["PixelDissolve", "PixelAssemble", "LastPixel", "Shatter", "Melt", "Grow", "Shrink",

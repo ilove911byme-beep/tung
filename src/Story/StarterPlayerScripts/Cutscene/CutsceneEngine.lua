@@ -29,6 +29,7 @@ local CameraRig = require(script.Parent:WaitForChild("CameraRig"))
 local Grade = require(script.Parent:WaitForChild("Grade"))
 local Overlay = require(script.Parent:WaitForChild("Overlay"))
 local Points = require(script.Parent:WaitForChild("Points"))
+local WorldFx = require(Client:WaitForChild("Gameplay"):WaitForChild("WorldFx"))
 
 local CutsceneEngine = {}
 
@@ -55,6 +56,7 @@ type Run = {
 	hiddenGuis: { [Instance]: boolean },
 	hidePlayers: boolean,
 	lastCf: CFrame,
+	localMode: boolean,
 }
 
 local run: Run? = nil
@@ -221,6 +223,7 @@ local function fireCue(r: Run, cue: Types.Cue, shot: Types.Shot, cueClock: numbe
 		Actors.setVisible(actor, cue.visible)
 	end
 	if actor and cue.anim then
+		actor.driven = true
 		actor.animator:play(cue.anim, {
 			startClock = cueClock,
 			speed = cue.animSpeed,
@@ -265,6 +268,15 @@ local function fireCue(r: Run, cue: Types.Cue, shot: Types.Shot, cueClock: numbe
 	end
 	if cue.music then
 		MusicDirector.override(cue.music, cue.musicFade, cue.musicVolume)
+	end
+	if cue.vignette then
+		Overlay.setVignette(true, cue.vignette)
+	end
+	if cue.clockTo then
+		Grade.setClock(cue.clockTo, cue.clockTime or 1)
+	end
+	if cue.world then
+		WorldFx.play(cue.world, cue.worldParams or {})
 	end
 	if late <= LATE_SKIP then
 		if cue.sfx then
@@ -432,7 +444,14 @@ local function update()
 	-- the last segment is over: tell the server, hold the last frame until it ends the cutscene
 	if not seg.next and not seg.vote and t >= seg.length and not r.finishedSent then
 		r.finishedSent = true
-		Remotes.get(Remotes.Names.CutsceneFinished):FireServer(r.runId, r.segKey)
+		if r.localMode then
+			local id = r.runId
+			task.defer(function()
+				CutsceneEngine.finishLocal(id)
+			end)
+		else
+			Remotes.get(Remotes.Names.CutsceneFinished):FireServer(r.runId, r.segKey)
+		end
 	end
 end
 
@@ -477,7 +496,8 @@ local function start(
 	cutsceneId: string,
 	segKey: string,
 	startTime: number,
-	info: { [string]: any }
+	info: { [string]: any },
+	localMode: boolean?
 )
 	local data = CutsceneLibrary.get(cutsceneId)
 	if not data then
@@ -488,8 +508,13 @@ local function start(
 	if old then
 		cleanup(old)
 	end
-	local runtimeRoot = ReplicatedStorage:WaitForChild("CutsceneRuntime", 5)
-	local runtime = runtimeRoot and runtimeRoot:WaitForChild(runId, 5)
+	local runtime: Instance? = nil
+	if localMode then
+		runtime = ReplicatedStorage:WaitForChild("RigTemplates", 5)
+	else
+		local runtimeRoot = ReplicatedStorage:WaitForChild("CutsceneRuntime", 5)
+		runtime = runtimeRoot and runtimeRoot:WaitForChild(runId, 5)
+	end
 	if not runtime then
 		warn("[CutsceneEngine] actors for " .. runId .. " did not arrive")
 		return
@@ -509,7 +534,7 @@ local function start(
 	Overlay.letterbox(true)
 	Overlay.setSkip(info.skippable == true)
 
-	local registry = Actors.spawn(runtime, data, clock)
+	local registry = Actors.spawn(runtime :: Instance, data, clock, { models = info.models })
 	local tokens = if typeof(info.tokens) == "table" then info.tokens else {}
 	local r: Run = {
 		runId = runId,
@@ -529,6 +554,7 @@ local function start(
 		hiddenGuis = {},
 		hidePlayers = data.players ~= nil and data.players.mode == "hide",
 		lastCf = camera.CFrame,
+		localMode = localMode == true,
 	}
 	run = r
 	spawnProps(r)
@@ -563,6 +589,33 @@ end
 
 function CutsceneEngine.isPlaying(): boolean
 	return run ~= nil
+end
+
+local localCounter = 0
+
+export type LocalOptions = { models: { [string]: string }? }
+
+--- Plays a cutscene only on this client (service cutscenes CS-DOWN / CS-DEAD / CS-REVIVE).
+--- Ignored while a party cutscene is running.
+function CutsceneEngine.playLocal(id: string, opts: LocalOptions?)
+	if run and not run.localMode then
+		return
+	end
+	localCounter += 1
+	local o: LocalOptions = opts or {}
+	task.spawn(
+		start,
+		"local_" .. localCounter,
+		id,
+		"main",
+		clock() + 0.05,
+		{ models = o.models, skippable = false },
+		true
+	)
+end
+
+function CutsceneEngine.finishLocal(runId: string)
+	finish(runId, false)
 end
 
 function CutsceneEngine.init()

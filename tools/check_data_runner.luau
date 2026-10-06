@@ -50,7 +50,7 @@ for id, cs in pairs(__cutscenes) do
 	local actorIds = {}
 	for _, a in ipairs(cs.actors) do
 		actorIds[a.id] = true
-		check(__RigSpecs.characters[a.model] ~= nil, id .. ": actor model not in RigSpecs: " .. a.model)
+		check(a.model == "@LocalPlayer" or __RigSpecs.characters[a.model] ~= nil, id .. ": actor model not in RigSpecs: " .. a.model)
 		checkPoint(id .. " actor " .. a.id, a.at)
 	end
 	for _, prop in ipairs(cs.props or {}) do

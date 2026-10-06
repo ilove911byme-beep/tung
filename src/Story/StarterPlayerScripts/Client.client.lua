@@ -1,18 +1,36 @@
 --!strict
--- Story place client entry point (Phase 1a: cutscene, animation, voice and audio stack).
+-- Story place client entry point: audio, cutscenes, HUD and the gameplay clients.
 local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Audio = require(Shared:WaitForChild("Audio"))
 
 local Root = script.Parent
 local Settings = require(Root:WaitForChild("Settings"))
-local MusicDirector = require(Root:WaitForChild("Audio"):WaitForChild("MusicDirector"))
-local AmbienceDirector = require(Root:WaitForChild("Audio"):WaitForChild("AmbienceDirector"))
-local Footsteps = require(Root:WaitForChild("Audio"):WaitForChild("Footsteps"))
-local VoiceService = require(Root:WaitForChild("Audio"):WaitForChild("VoiceService"))
-local VoteUI = require(Root:WaitForChild("UI"):WaitForChild("VoteUI"))
+local AudioFolder = Root:WaitForChild("Audio")
+local UI = Root:WaitForChild("UI")
+local Gameplay = Root:WaitForChild("Gameplay")
+local MusicDirector = require(AudioFolder:WaitForChild("MusicDirector"))
+local AmbienceDirector = require(AudioFolder:WaitForChild("AmbienceDirector"))
+local Footsteps = require(AudioFolder:WaitForChild("Footsteps"))
+local VoiceService = require(AudioFolder:WaitForChild("VoiceService"))
 local CutsceneEngine = require(Root:WaitForChild("Cutscene"):WaitForChild("CutsceneEngine"))
+local VoteUI = require(UI:WaitForChild("VoteUI"))
+local Hud = require(UI:WaitForChild("Hud"))
+local DialogueUI = require(UI:WaitForChild("DialogueUI"))
+local JournalUI = require(UI:WaitForChild("JournalUI"))
+local QTEUI = require(UI:WaitForChild("QTEUI"))
+local DeathUI = require(UI:WaitForChild("DeathUI"))
+local DownedClient = require(Gameplay:WaitForChild("DownedClient"))
+local WorldFx = require(Gameplay:WaitForChild("WorldFx"))
+local FakeBlocks = require(Gameplay:WaitForChild("FakeBlocks"))
+local GiallinoClient = require(Gameplay:WaitForChild("GiallinoClient"))
+
+-- our own HUD shows HP; the Roblox health bar would show the hidden real value
+pcall(function()
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+end)
 
 Audio.init()
 local function applyVolumes()
@@ -31,6 +49,18 @@ Footsteps.init()
 VoiceService.init()
 VoteUI.init()
 CutsceneEngine.init()
+Hud.setVoice(function(lineId: string)
+	VoiceService.say(lineId)
+end)
+Hud.init()
+DialogueUI.init()
+JournalUI.init()
+QTEUI.init()
+DeathUI.init()
+WorldFx.init()
+FakeBlocks.init()
+DownedClient.init()
+GiallinoClient.init()
 
 if RunService:IsStudio() then
 	require(Root:WaitForChild("Dev"):WaitForChild("DebugClient")).init()

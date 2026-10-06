@@ -97,6 +97,9 @@ end
 
 --- Applies a preset over `time` seconds.
 function Grade.apply(name: string, time: number?)
+	if name == "KEEP" then
+		return -- service cutscenes keep whatever look the chapter has
+	end
 	local def = Grades[name]
 	if not def then
 		warn("[Grade] unknown grade " .. name)

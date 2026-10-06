@@ -263,9 +263,15 @@ function Overlay.setGrain(on: boolean)
 	end
 end
 
-function Overlay.setVignette(on: boolean)
-	if vignette then
-		vignette.Visible = on
+function Overlay.setVignette(on: boolean, color: Color3?)
+	local v = vignette
+	if v then
+		v.Visible = on
+		for _, edgeFrame in v:GetChildren() do
+			if edgeFrame:IsA("Frame") then
+				edgeFrame.BackgroundColor3 = color or Color3.new(0, 0, 0)
+			end
+		end
 	end
 end
 

@@ -1,0 +1,3 @@
+--!strict
+-- Replaces Roblox's default "Health" regeneration script: HP only changes through
+-- HealthService (Downed / Dead / revive rules from the brief), so there is no passive regen.

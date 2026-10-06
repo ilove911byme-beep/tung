@@ -19,6 +19,33 @@ Remotes.Names = {
 	VoteEnd = "VoteEnd", -- s->c (voteId, winnerIndex)
 	MusicState = "MusicState", -- s->c (state)
 	DebugFx = "DebugFx", -- s->c (effectName) Studio only
+	-- HUD
+	Objective = "Objective", -- s->c (text or "")
+	Timer = "Timer", -- s->c (endsAt or 0)
+	Toast = "Toast", -- s->c (kind, data)  kind: achievement | aura | info
+	BossCard = "BossCard", -- s->c (title, subtitle, signatureSound)
+	MemoryPage = "MemoryPage", -- s->c (pageId)
+	-- inventory
+	InventoryUpdate = "InventoryUpdate", -- s->c (slots)
+	UseItem = "UseItem", -- c->s (slotIndex)
+	-- health / death
+	DeathScreen = "DeathScreen", -- s->c (show, solo)
+	DeathChoice = "DeathChoice", -- c->s ("revive" | "spectate" | "retry")
+	-- QTE
+	QTEStart = "QTEStart", -- s->c (qteId, spec)
+	QTEResult = "QTEResult", -- c->s (qteId, success)
+	QTETap = "QTETap", -- c->s (qteId) party bar taps
+	QTEProgress = "QTEProgress", -- s->c (qteId, progress 0..1)
+	QTEEnd = "QTEEnd", -- s->c (qteId, success)
+	-- dialogue
+	DialogueLine = "DialogueLine", -- s->c (lineId, tokens)
+	DialogueEnd = "DialogueEnd", -- s->c ()
+	-- journal
+	JournalUpdate = "JournalUpdate", -- s->c (state)
+	JournalRead = "JournalRead", -- c->s ("names")
+	-- world
+	WorldFx = "WorldFx", -- s->c (kind, params)
+	GiallinoSay = "GiallinoSay", -- s->c (text) companion line outside cutscenes
 } :: { [string]: string }
 
 local FOLDER = "Remotes"

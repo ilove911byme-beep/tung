@@ -31,6 +31,19 @@ for _, child in script:GetChildren() do
 	end
 end
 
+-- Memory Pages are read by the Narrator: the text lives once, in StoryData/MemoryPages.
+local MemoryPages = require(script.Parent:WaitForChild("StoryData"):WaitForChild("MemoryPages"))
+for _, page in MemoryPages do
+	byId["MEM_" .. page.id] = {
+		id = "MEM_" .. page.id,
+		speaker = "Narrator",
+		text = page.text,
+		chapter = page.chapter,
+		scene = "MEMORY",
+		hum = "none",
+	}
+end
+
 function VoiceLines.get(id: string): Types.VoiceLine?
 	return byId[id]
 end

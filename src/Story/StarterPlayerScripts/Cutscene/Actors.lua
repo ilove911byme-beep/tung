@@ -45,6 +45,8 @@ export type Actor = {
 	original: { [BasePart]: number },
 	guis: { [Instance]: boolean },
 	lastAnimScale: number,
+	external: boolean, -- the local player's own character: not cloned, moved or destroyed
+	driven: boolean, -- external actors are only posed after a cue animates them
 }
 
 export type Registry = {
@@ -86,12 +88,45 @@ function Actors.setVisible(actor: Actor, visible: boolean)
 end
 
 --- Spawns every actor of a cutscene. Waits briefly for the server copies to replicate.
-function Actors.spawn(runtime: Instance, data: Types.Cutscene, clock: () -> number): Registry
+export type SpawnOptions = { models: { [string]: string }? }
+
+--- Spawns every actor of a cutscene. Waits briefly for the server copies to replicate.
+--- opts.models remaps model names (CS-DEAD: "Giallino" -> the current form). The model
+--- "@LocalPlayer" is the local player's own character.
+function Actors.spawn(
+	runtime: Instance,
+	data: Types.Cutscene,
+	clock: () -> number,
+	opts: SpawnOptions?
+): Registry
 	local registry: Registry = { byId = {}, folder = actorFolder(), clock = clock }
+	local remap = if opts and opts.models then opts.models else {}
 	for _, spec in data.actors do
-		local template = runtime:WaitForChild(spec.model, 5)
+		local modelName = remap[spec.model] or spec.model
+		if modelName == "@LocalPlayer" then
+			local character = game:GetService("Players").LocalPlayer.Character
+			if character then
+				local own: Actor = {
+					id = spec.id,
+					model = character,
+					animator = PoseAnimator.new(character, clock),
+					rootHeight = 0,
+					baseCf = character:GetPivot(),
+					motion = nil,
+					visibleState = true,
+					original = {},
+					guis = {},
+					lastAnimScale = 1,
+					external = true,
+					driven = false,
+				}
+				registry.byId[spec.id] = own
+			end
+			continue
+		end
+		local template = runtime:WaitForChild(modelName, 5)
 		if not template or not template:IsA("Model") then
-			warn(string.format("[Actors] %s: model %s did not arrive", data.id, spec.model))
+			warn(string.format("[Actors] %s: model %s did not arrive", data.id, modelName))
 			continue
 		end
 		local model = template:Clone()
@@ -114,6 +149,8 @@ function Actors.spawn(runtime: Instance, data: Types.Cutscene, clock: () -> numb
 			original = {},
 			guis = {},
 			lastAnimScale = 1,
+			external = false,
+			driven = true,
 		}
 		for _, d in model:GetDescendants() do
 			if d:IsA("BasePart") then
@@ -132,7 +169,24 @@ function Actors.spawn(runtime: Instance, data: Types.Cutscene, clock: () -> numb
 		if face then
 			-- the face gui is created now, so register it for visibility changes
 			actor.guis[face.gui] = true
-			FaceController.set(model, spec.face or "neutral")
+			local default = model:GetAttribute("DefaultFace")
+			FaceController.set(
+				model,
+				spec.face or (if typeof(default) == "string" then default else "neutral")
+			)
+		end
+		-- extra faces (Giallino Totale's other sides)
+		for _, sub in model:GetDescendants() do
+			if sub:IsA("Model") then
+				local subFace = sub:GetAttribute("DefaultFace")
+				if typeof(subFace) == "string" then
+					local f = FaceController.get(sub)
+					if f then
+						actor.guis[f.gui] = true
+						FaceController.set(sub, subFace)
+					end
+				end
+			end
 		end
 		if spec.visible == false then
 			setVisible(actor, false)
@@ -302,7 +356,11 @@ end
 function Actors.update(registry: Registry)
 	local now = registry.clock()
 	for _, actor in registry.byId do
-		if actor.model.Parent then
+		if actor.external then
+			if actor.driven then
+				actor.animator:step()
+			end
+		elseif actor.model.Parent then
 			updateMotion(actor, now)
 			actor.animator:step()
 			-- scale tracks (A-GIALLINO_GROW...) only touch the model when they change, so the
@@ -319,9 +377,16 @@ end
 
 function Actors.cleanup(registry: Registry)
 	for _, actor in registry.byId do
-		Footsteps.untrack(actor.model)
-		actor.animator:destroy()
-		actor.model:Destroy()
+		if actor.external then
+			-- leave the pose alone unless the cutscene animated it (DownedClient owns it)
+			if actor.driven then
+				actor.animator:destroy()
+			end
+		else
+			Footsteps.untrack(actor.model)
+			actor.animator:destroy()
+			actor.model:Destroy()
+		end
 	end
 	table.clear(registry.byId)
 end

@@ -46,7 +46,22 @@ function PoseAnimator.new(model: Model, clock: (() -> number)?): PoseAnimator
 			table.insert(names, d.Name)
 		end
 	end
-	table.insert(names, "Root")
+	-- R15 player characters: our RootJoint (waist bend) is R15's "Waist"; R15's real "Root"
+	-- motor (HumanoidRootPart -> LowerTorso) then takes the Root track instead of the pivot.
+	local waist = motors.Waist
+	if not motors.RootJoint and waist then
+		motors.RootJoint = waist
+		local anyMotors: any = motors
+		anyMotors.Waist = nil
+		local index = table.find(names, "Waist")
+		if index then
+			table.remove(names, index)
+		end
+		table.insert(names, "RootJoint")
+	end
+	if not motors.Root then
+		table.insert(names, "Root")
+	end
 	return setmetatable({
 		model = model,
 		mixer = PoseMixer.new(names, loader, clock or os.clock),

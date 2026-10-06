@@ -72,6 +72,11 @@ local animClock = 0
 local animConnection: RBXScriptConnection? = nil
 
 local function findHead(model: Model): BasePart?
+	for _, d in model:GetChildren() do
+		if d:IsA("BasePart") and d:GetAttribute("FaceStyle") ~= nil then
+			return d
+		end
+	end
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") and d:GetAttribute("FaceStyle") ~= nil then
 			return d
