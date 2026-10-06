@@ -306,10 +306,17 @@ function LobbyHud.init()
 	buildCartPanel(r)
 	buildWheel(r)
 	buildAura(r)
-	local emoteButton = Screen.button(r, "EmoteButton", Strings.Lobby.Emotes, Vector2.new(150, 60))
-	emoteButton.AnchorPoint = Vector2.new(0, 1)
-	emoteButton.Position = UDim2.new(0, 16, 1, -16)
-	Screen.autoScale(emoteButton)
+	-- the button keeps its own UIScale for the hover effect: the viewport scale goes on a holder
+	local holder = Instance.new("Frame")
+	holder.Name = "EmoteHolder"
+	holder.BackgroundTransparency = 1
+	holder.AnchorPoint = Vector2.new(0, 1)
+	holder.Position = UDim2.new(0, 16, 1, -16)
+	holder.Size = UDim2.fromOffset(150, 60)
+	holder.Parent = r
+	Screen.autoScale(holder)
+	local emoteButton =
+		Screen.button(holder, "EmoteButton", Strings.Lobby.Emotes, Vector2.new(150, 60))
 	click(emoteButton, toggleWheel)
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 		if not processed and input.KeyCode == Enum.KeyCode.G and r.Visible then
@@ -339,10 +346,19 @@ function LobbyHud.init()
 		end
 	end)
 	Remotes.get(Remotes.Names.LobbyAura).OnClientEvent:Connect(renderAura)
+	-- nothing of the HUD over CS-00; back after a failed launch
+	local hudWasVisible = false
 	Launch.Started:Connect(function()
 		local w = wheel
 		if w then
 			w.Visible = false
+		end
+		hudWasVisible = r.Visible
+		r.Visible = false
+	end)
+	Launch.Cancelled:Connect(function()
+		if hudWasVisible then
+			r.Visible = true
 		end
 	end)
 	task.spawn(function()

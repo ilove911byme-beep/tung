@@ -13,14 +13,19 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 
 local Client = script.Parent.Parent
 local Actors = require(Client:WaitForChild("Cutscene"):WaitForChild("Actors"))
+local WorldFx = require(Client:WaitForChild("Gameplay"):WaitForChild("WorldFx"))
 local CutsceneEngine = require(Client:WaitForChild("Cutscene"):WaitForChild("CutsceneEngine"))
 
 local Launch = {}
 
 local hold: LoadingScreen.Handle? = nil
 local hidden: { BasePart } = {}
+local hiddenGuis: { BillboardGui } = {}
+local generation = 0
 local launched = Instance.new("BindableEvent")
 Launch.Started = launched.Event
+local cancelled = Instance.new("BindableEvent")
+Launch.Cancelled = cancelled.Event
 
 local function hideCarts(on: boolean)
 	if on then
@@ -34,6 +39,9 @@ local function hideCarts(on: boolean)
 					if d:IsA("BasePart") then
 						d.LocalTransparencyModifier = 1
 						table.insert(hidden, d)
+					elseif d:IsA("BillboardGui") and d.Enabled then
+						d.Enabled = false
+						table.insert(hiddenGuis, d)
 					end
 				end
 			end
@@ -43,11 +51,16 @@ local function hideCarts(on: boolean)
 			p.LocalTransparencyModifier = 0
 		end
 		table.clear(hidden)
+		for _, g in hiddenGuis do
+			g.Enabled = true
+		end
+		table.clear(hiddenGuis)
 	end
 end
 
 --- Called when the server says the teleport failed: back to the platform.
 function Launch.cancel()
+	generation += 1
 	local h = hold
 	if h then
 		h.destroy()
@@ -55,9 +68,14 @@ function Launch.cancel()
 	end
 	hideCarts(false)
 	Actors.setStandInPlayers(nil)
+	-- CS-00 put the tunnel lamps out
+	WorldFx.play("lightsOn", { tag = "TunnelLamp" })
+	cancelled:Fire()
 end
 
 local function onLaunch(_cartIndex: number, startTime: number, ids: { number })
+	generation += 1
+	local mine = generation
 	launched:Fire()
 	local riders = {}
 	for _, id in ids do
@@ -80,6 +98,9 @@ local function onLaunch(_cartIndex: number, startTime: number, ids: { number })
 	CutsceneEngine.playLocal("CS_00")
 	local data = CutsceneLibrary.get("CS_00")
 	task.wait(if data then data.segments.main.length - 0.1 else 14)
+	if mine ~= generation then
+		return -- cancelled meanwhile (teleport failed)
+	end
 	-- black with the loaded Giallino until Roblox takes over with the TeleportGui
 	local h = LoadingScreen.show()
 	h.setProgress(1)

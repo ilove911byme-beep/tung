@@ -25,7 +25,8 @@ export type Profile = {
 }
 
 local profiles: { [Player]: Profile } = {}
-local limiter = RateLimiter.new(0.5)
+local profileLimiter = RateLimiter.new(0.3)
+local stareLimiter = RateLimiter.new(1)
 local changed = Instance.new("BindableEvent")
 LobbyProfiles.Changed = changed.Event -- (player)
 
@@ -162,7 +163,7 @@ function LobbyProfiles.init()
 	end)
 	Remotes.get(Remotes.Names.LobbyProfile).OnServerEvent
 		:Connect(function(player: Player, settings: unknown, chapter: unknown)
-			if not limiter:allow(player) then
+			if not profileLimiter:allow(player) then
 				return
 			end
 			local p = LobbyProfiles.get(player)
@@ -182,7 +183,7 @@ function LobbyProfiles.init()
 			end
 		end)
 	Remotes.get(Remotes.Names.LobbyStare).OnServerEvent:Connect(function(player: Player)
-		if not limiter:allow(player) then
+		if not stareLimiter:allow(player) then
 			return
 		end
 		-- the menu shows right after joining: the contest takes 60 s, so it cannot be won sooner

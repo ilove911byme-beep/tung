@@ -61,6 +61,23 @@ local stareSent = false
 
 ------------------------------------------------------------------ helpers
 
+local function setControls(enabled: boolean)
+	local playerScripts = player:FindFirstChild("PlayerScripts")
+	local module = playerScripts and playerScripts:FindFirstChild("PlayerModule")
+	if module and module:IsA("ModuleScript") then
+		pcall(function()
+			local controls = (require :: any)(module):GetControls()
+			if enabled then
+				controls:Enable()
+			else
+				controls:Disable()
+			end
+		end)
+		return true
+	end
+	return false
+end
+
 local function catmull(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: number): Vector3
 	local t2, t3 = t * t, t * t * t
 	return 0.5
@@ -938,6 +955,7 @@ local function play()
 	if g then
 		g.Enabled = false
 	end
+	setControls(true)
 	LobbyHud.show()
 end
 
@@ -1049,6 +1067,22 @@ function MainMenu.open()
 		camera:GetPropertyChangedSignal("ViewportSize"):Connect(layout)
 	end
 	startCamera()
+	-- nobody walks into a minecart behind the menu
+	task.spawn(function()
+		local t0 = os.clock()
+		while open and os.clock() - t0 < 10 do
+			if setControls(false) and os.clock() - t0 > 2 then
+				break
+			end
+			task.wait(0.5)
+		end
+	end)
+	-- the camera flies far from the character: ask streaming for the valley
+	task.spawn(function()
+		pcall(function()
+			player:RequestStreamAroundAsync(LOOK)
+		end)
+	end)
 end
 
 function MainMenu.init()

@@ -36,6 +36,21 @@ function ReturnService.toLobby()
 		achievements = achievements,
 		aura = aura,
 	}
+	-- a teleport can still fail after TeleportAsync returned: try that player once more
+	local retried: { [Player]: boolean } = {}
+	TeleportService.TeleportInitFailed:Connect(function(player: Player)
+		if retried[player] or not player.Parent then
+			return
+		end
+		retried[player] = true
+		task.delay(3, function()
+			pcall(function()
+				local options = Instance.new("TeleportOptions")
+				options:SetTeleportData(data)
+				TeleportService:TeleportAsync(Config.PlaceIds.Lobby, { player }, options)
+			end)
+		end)
+	end)
 	for attempt = 1, 3 do
 		local ok, err = pcall(function()
 			local options = Instance.new("TeleportOptions")

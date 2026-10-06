@@ -8,19 +8,31 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 
-ReplicatedFirst:RemoveDefaultLoadingScreen()
+-- something black covers the screen until the shared loading screen module has replicated
+local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 local arriving = TeleportService:GetArrivingTeleportGui()
+local cover: ScreenGui
 if arriving then
-	arriving.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	cover = arriving
+else
+	cover = Instance.new("ScreenGui")
+	cover.IgnoreGuiInset = true
+	cover.DisplayOrder = 999
+	local black = Instance.new("Frame")
+	black.Size = UDim2.fromScale(1, 1)
+	black.BackgroundColor3 = Color3.new(0, 0, 0)
+	black.BorderSizePixel = 0
+	black.Parent = cover
 end
+cover.ResetOnSpawn = false
+cover.Parent = playerGui
+ReplicatedFirst:RemoveDefaultLoadingScreen()
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local LoadingScreen = require(Shared:WaitForChild("UI"):WaitForChild("LoadingScreen"))
 
 local handle = LoadingScreen.show()
-if arriving then
-	arriving:Destroy()
-end
+cover:Destroy()
 local started = os.clock()
 local loadedAt: number? = nil
 -- in Studio the test stage never starts a chapter on its own: do not block it for long

@@ -34,6 +34,9 @@ type Cart = {
 	friendsOnly: boolean,
 	endsAt: number?,
 	launching: boolean,
+	launchToken: number,
+	refreshing: boolean,
+	dirty: boolean,
 	home: CFrame,
 	label: TextLabel,
 }
@@ -108,6 +111,7 @@ local function buildCart(index: number, parent: Instance): Cart
 		end
 	end
 	model.PrimaryPart = base
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	-- the queue label
 	local gui = Instance.new("BillboardGui")
 	gui.Size = UDim2.fromOffset(260, 70)
@@ -146,6 +150,9 @@ local function buildCart(index: number, parent: Instance): Cart
 		friendsOnly = false,
 		endsAt = nil,
 		launching = false,
+		launchToken = 0,
+		refreshing = false,
+		dirty = false,
 		home = model:GetPivot(),
 		label = label,
 	}
@@ -189,23 +196,39 @@ local function isFriend(a: Player, b: Player): boolean
 end
 
 local function refresh(cart: Cart)
+	-- IsFriendsWithAsync yields: one refresh at a time, re-run if seats changed meanwhile
+	if cart.refreshing then
+		cart.dirty = true
+		return
+	end
+	cart.refreshing = true
+	cart.dirty = false
 	local before: { [Player]: boolean } = {}
 	for _, p in cart.riders do
 		before[p] = true
 	end
+	-- 1) decide about newcomers (may yield)
+	local refusedSeats: { [Seat]: boolean } = {}
+	for _, seat in cart.seats do
+		local h = seat.Occupant
+		local p = h and Players:GetPlayerFromCharacter(h.Parent)
+		if p and not before[p] then
+			local owner = cart.owner
+			if
+				cart.launching
+				or (cart.friendsOnly and owner ~= nil and owner ~= p and not isFriend(owner, p))
+			then
+				refusedSeats[seat] = true
+			end
+		end
+	end
+	-- 2) one synchronous pass over the current occupants
 	local now: { Player } = {}
 	for _, seat in cart.seats do
 		local h = seat.Occupant
 		local p = h and Players:GetPlayerFromCharacter(h.Parent)
 		if p then
-			local newcomer = not before[p]
-			local owner = cart.owner
-			local refused = newcomer
-				and (
-					cart.launching
-					or (cart.friendsOnly and owner ~= nil and owner ~= p and not isFriend(owner, p))
-				)
-			if refused then
+			if refusedSeats[seat] or (cart.launching and not before[p]) then
 				eject(seat)
 			else
 				table.insert(now, p)
@@ -239,6 +262,10 @@ local function refresh(cart: Cart)
 		cart.endsAt = workspace:GetServerTimeNow() + Config.Party.QueueCountdown
 	end
 	pushState(cart)
+	cart.refreshing = false
+	if cart.dirty then
+		task.defer(refresh, cart)
+	end
 end
 
 local function resetCart(cart: Cart)
@@ -258,10 +285,20 @@ local function resetCart(cart: Cart)
 	refresh(cart)
 end
 
-local function teleportParty(riders: { Player }): boolean
+local function teleportParty(all: { Player }): boolean
 	if RunService:IsStudio() or Config.PlaceIds.Story == 0 then
 		warn("[QueueService] " .. Strings.Lobby.StudioNoTeleport)
 		return false
+	end
+	-- somebody may have left the game during the cutscene: TeleportAsync fails on them
+	local riders = {}
+	for _, p in all do
+		if p.Parent == Players then
+			table.insert(riders, p)
+		end
+	end
+	if #riders == 0 then
+		return true
 	end
 	local owner = riders[1]
 	local members = {}
@@ -313,6 +350,8 @@ local function launch(cart: Cart)
 		return
 	end
 	cart.launching = true
+	cart.launchToken += 1
+	local token = cart.launchToken
 	cart.endsAt = nil
 	local riders = table.clone(cart.riders)
 	for _, p in riders do
@@ -344,7 +383,7 @@ local function launch(cart: Cart)
 			local a, b = path[i], path[i + 1]
 			local duration = (b - a).Magnitude / (if i == 1 then 10 else 22)
 			local t0 = os.clock()
-			while cart.launching do
+			while cart.launching and cart.launchToken == token do
 				local k = math.clamp((os.clock() - t0) / duration, 0, 1)
 				local p = a:Lerp(b, k) + offset
 				local dir = (b - a).Unit
@@ -358,7 +397,26 @@ local function launch(cart: Cart)
 	end)
 	task.wait(Config.Cutscene.LeadSeconds + length + 0.5)
 	local ok = teleportParty(riders)
-	if not ok then
+	if ok then
+		-- the riders are on their way: free the cart once they are gone (or after 25 s; a
+		-- TeleportInitFailed meanwhile is reported to that rider by the handler below)
+		local t0 = os.clock()
+		while os.clock() - t0 < 25 do
+			local anyLeft = false
+			for _, p in riders do
+				if p.Parent == Players then
+					anyLeft = true
+				end
+			end
+			if not anyLeft then
+				break
+			end
+			task.wait(1)
+		end
+		if cart.launchToken == token then
+			resetCart(cart)
+		end
+	else
 		local failRemote = Remotes.get(Remotes.Names.LobbyCartState)
 		for _, p in riders do
 			if p.Parent then
@@ -367,6 +425,26 @@ local function launch(cart: Cart)
 		end
 		task.wait(1)
 		resetCart(cart)
+	end
+end
+
+local function onTeleportFailed(player: Player)
+	for _, cart in carts do
+		if cart.launching and table.find(cart.riders, player) then
+			Remotes.get(Remotes.Names.LobbyCartState)
+				:FireClient(player, cart.index, { failed = true })
+			local h = humanoidOf(player)
+			if h then
+				h.JumpHeight = 7.2
+				h.JumpPower = 50
+			end
+			for _, seat in cart.seats do
+				local occ = seat.Occupant
+				if occ and occ.Parent == player.Character then
+					eject(seat)
+				end
+			end
+		end
 	end
 end
 
@@ -401,6 +479,7 @@ function QueueService.init(parent: Instance)
 			end
 		end)
 	end
+	TeleportService.TeleportInitFailed:Connect(onTeleportFailed)
 	Remotes.get(Remotes.Names.LobbyCart).OnServerEvent
 		:Connect(function(player: Player, action: unknown)
 			if not limiter:allow(player) or type(action) ~= "string" then

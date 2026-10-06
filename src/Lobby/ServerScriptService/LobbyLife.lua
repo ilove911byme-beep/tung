@@ -61,6 +61,7 @@ local function placeCameo(c: Cameo, parent: Instance)
 	local pos = Builder.studs(c.x, LobbyWorld.Ground, c.z)
 	local r = math.rad(c.yaw)
 	local h = (m:GetAttribute("RootHeight") :: number?) or 0
+	m.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	m:PivotTo(
 		CFrame.lookAt(pos, pos + Vector3.new(math.sin(r), 0, -math.cos(r))) * CFrame.new(0, h, 0)
 	)
