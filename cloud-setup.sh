@@ -3,4 +3,4 @@
 # Installs Rojo (Roblox project builder), Selene (linter) and StyLua (formatter) from crates.io.
 command -v rojo   >/dev/null || cargo install --locked rojo
 command -v selene >/dev/null || cargo install --locked selene
-command -v stylua >/dev/null || cargo install --locked stylua
+command -v stylua >/dev/null || cargo install --locked stylua --features luau

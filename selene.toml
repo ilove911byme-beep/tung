@@ -1,0 +1,5 @@
+std = "roblox_min"
+
+[lints]
+# Strict-typed code uses "_" prefixed names for intentionally unused values.
+unused_variable = "warn"
