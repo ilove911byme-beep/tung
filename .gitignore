@@ -3,3 +3,4 @@ ServerPackages/
 sourcemap.json
 *.rbxl.lock
 .DS_Store
+__pycache__/
