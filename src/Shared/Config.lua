@@ -70,6 +70,16 @@ Config.Cutscene = {
 	LetterboxSeconds = 0.4,
 	ReturnBlendSeconds = 0.6,
 	SyncGraceSeconds = 3, -- server waits for all clients: cutscene length + this
+	LeadSeconds = 1.5, -- shared start time is this far in the future (actors load, TTS preloads)
+}
+
+-- Text-to-speech. Roblox allows 1 + 6 * concurrent users requests per minute per experience,
+-- so every client keeps to its own 6 per minute and falls back to subtitles beyond that.
+Config.Voice = {
+	RequestsPerMinutePerClient = 6,
+	MaxTextLength = 300,
+	SubtitleCharsPerSecond = 32,
+	SubtitleHoldSeconds = 1.6,
 }
 
 -- World (map.md)
@@ -86,7 +96,9 @@ Config.SoundGroups = { "Music", "Ambience", "SFX", "Voice" }
 
 -- Debug helpers that only ever run inside Studio
 Config.Debug = {
-	EnableChatCommands = true, -- /cs CS_xx, /tp <spot> (added in later phases)
+	EnableChatCommands = true, -- /cs CS_xx, /fx <Effect>, /tp <spot> (later phases)
+	TestStage = true, -- build the Phase 1a test stage when no map exists (Studio only)
+	WarnMissingSounds = true, -- warn once per placeholder SoundId (Studio only)
 }
 
 --- True only inside Studio and only when Config.SkipLobby is set.

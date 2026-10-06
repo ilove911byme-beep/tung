@@ -96,3 +96,42 @@ Open this repo in Claude Code on the web (claude.ai/code) and write: **«Нач�
 - `stylua` должен быть собран с Luau: `cargo install --locked stylua --features luau` (без флага он не понимает типы Luau). `cloud-setup.sh` уже обновлён.
 - `selene generate-roblox-std` в облаке не работает (прокси, TLS), поэтому `selene.toml` использует `roblox_min.yml` — минимальный список глобальных Roblox-имён. На своём ПК можно выполнить `selene generate-roblox-std`, поставить `std = "roblox"` и удалить `roblox_min.yml`.
 - `--!strict` проверяется только в Studio (Script Analysis); в облаке нет `luau-analyze`.
+
+---
+
+## Phase 1a — катсцены, анимации, голоса, звук
+
+Что где лежит:
+
+| Путь | Что это |
+|---|---|
+| `src/Shared/Cutscenes/CS_xx.lua` | катсцены как данные (покадрово по cutscenes.md); сейчас CS_02 и CS_05 |
+| `src/Shared/Animations/A_*.lua` | анимации как ключевые кадры (Motor6D C0); id `A-KNEEL_SOFT` = файл `A_KNEEL_SOFT.lua` |
+| `src/Shared/Visual/` | PoseMath/PoseMixer/PoseAnimator (анимации), FaceController (пиксельные лица), Effects (PixelDissolve, PixelAssemble, Shatter, Melt, Grow/Shrink, WallBreak, RootsBridge, Bloom, TimeFreeze) |
+| `src/Shared/RigSpecs.lua` | размеры и цвета блочных ригов-заглушек (Ballerina, Giallino, Dummy) |
+| `src/Shared/SoundIds.lua` | 97 звуков из `assets/audio` — сюда вставляешь ID после загрузки |
+| `src/Shared/VoiceSettings.lua`, `src/Shared/VoiceLines/` | голоса TTS по персонажам и реплики |
+| `src/Shared/World/Anchors.lua` | якоря камер из map.md (в блоках) |
+| `src/Story/ServerScriptService/Services/` | CutsceneService (синхронизация, голосования, пропуск), VoteService |
+| `src/Story/StarterPlayerScripts/Cutscene/` | CutsceneEngine (камера, переходы, цветокор, актёры) |
+| `src/Story/StarterPlayerScripts/Audio/` | MusicDirector, AmbienceDirector, Footsteps, VoiceService |
+| `src/Story/ServerScriptService/Dev/` | тестовая площадка и чат-команды (только в Studio) |
+
+### Как проверить в Studio
+
+1. Открой `build/Story.rbxl`, нажми **Play**. В Studio сама строится тестовая площадка по координатам map.md: станция с рельсами и фонарём, стена таверны с окном, площадь, кусок реки.
+2. В чате:
+   - `/cs CS_02` — «Привет, я Giallino» с голосованием (кнопки внизу или клавиши 1–3).
+   - `/cs CS_05` — «Последний танец Балерины» (без пропуска при первом показе).
+   - `/cs list` — список катсцен (в Output).
+   - `/fx PixelDissolve` (и `PixelAssemble`, `LastPixel`, `Shatter`, `Melt`, `Grow`, `Shrink`, `WallBreak`, `RootsBridge`, `Bloom`, `TimeFreeze`, `TimeResume`) — эффект на манекене у станции.
+3. Для проверки синхронизации: Test → Clients and Servers → 2 Players, `/cs CS_02` в одном клиенте. Пропуск — кнопка Skip, нужны голоса всех.
+
+Пока ID звуков не вставлены, звуки и музыка молчат (в Output одна строка на каждый звук). Голоса работают сразу через встроенный TTS Roblox.
+
+### Проверки в облаке (без Studio)
+
+- `./scripts/build.sh` — stylua, selene, сборка обоих плейсов.
+- `python3 tools/check_data.py --luau <путь к luau>` — все катсцены загружаются, ссылки на реплики, анимации, звуки, якоря и модели существуют, тайминги кадров совпадают с cutscenes.md, юнит-тесты PoseMath/PoseMixer.
+- `python3 tools/anim_preview/preview.py --luau <путь к luau> --scene cs05 --out cs05.png` — рендер поз анимаций (тот же код микширования, что в игре) спереди и сбоку.
+- Строгая проверка типов: `luau-lsp analyze --platform roblox --sourcemap sourcemap.json --definitions=@roblox=globalTypes.d.luau src` (luau-lsp и `luau` собираются из исходников github.com/JohnnyMorganz/luau-lsp; определения — `scripts/globalTypes.d.luau` оттуда же; `rojo sourcemap story.project.json -o sourcemap.json`).

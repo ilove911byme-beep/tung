@@ -1,0 +1,4 @@
+--!strict
+-- Replaces Roblox's default character sounds (a LocalScript with this exact name in
+-- StarterPlayerScripts overrides the built-in one). Footsteps come from Audio/Footsteps with the
+-- game's own step_* sounds, chosen by the block under the feet.

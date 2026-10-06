@@ -110,9 +110,29 @@ Strings.Lobby = {
 
 Strings.Dialogue = {
 	VoteTimer = "Vote: %d",
+	VoteTitle = "Choose",
+	VoteCount = "%d",
 	Skip = "Skip",
 	SkipVotes = "Skip %d/%d",
 }
+
+-- Speaker names shown in subtitles and dialogue boxes.
+Strings.Speakers = {
+	Narrator = "Narrator",
+	Giallino = "Giallino",
+	Falsino = "Falsino",
+	Negatino = "Negatino",
+	Crudelino = "Crudelino",
+	GiallinoTotale = "Giallino Totale",
+	TungTung = "Tung Tung Tung Sahur",
+	Lirili = "Lirili Larila",
+	Ballerina = "Ballerina Cappuccina",
+	Tralalero = "Tralalero Tralala",
+	Chimpanzini = "Chimpanzini Bananini",
+	Patapim = "Brr Brr Patapim",
+	Bombardiro = "Bombardiro Crocodilo",
+	Cappuccino = "Cappuccino Assassino",
+} :: { [string]: string }
 
 Strings.Journal = {
 	Title = "JOURNAL",
