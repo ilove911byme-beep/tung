@@ -4,6 +4,7 @@
 local Bloom = require(script.Bloom)
 local Debris = require(script.Debris)
 local Melt = require(script.Melt)
+local Morph = require(script.Morph)
 local PixelAssemble = require(script.PixelAssemble)
 local PixelDissolve = require(script.PixelDissolve)
 local RootsBridge = require(script.RootsBridge)
@@ -30,6 +31,9 @@ Effects.Kinds = {
 	"DropItem",
 	"ShowPart",
 	"HidePart",
+	"Transform",
+	"Wither",
+	"DirtBurst",
 }
 
 -- a named part of a model (accessories such as "Apple", "Knife", "BoardInHand")
@@ -122,6 +126,14 @@ function Effects.run(kind: string, target: Instance?, params: { [string]: any }?
 			activeFreeze:resume()
 			activeFreeze = nil
 		end
+	elseif kind == "Transform" then
+		assert(target, "Transform needs a model")
+		Morph.transform(target, p :: any)
+	elseif kind == "Wither" then
+		assert(target, "Wither needs a model")
+		Morph.wither(target, p :: any)
+	elseif kind == "DirtBurst" then
+		Morph.dirtBurst(target, p :: any)
 	elseif kind == "DropItem" then
 		dropItem(target, p)
 	elseif kind == "ShowPart" or kind == "HidePart" then

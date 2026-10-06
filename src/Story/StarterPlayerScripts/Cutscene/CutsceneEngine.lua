@@ -195,9 +195,13 @@ local function resolveParams(r: Run, params: { [string]: any }?): { [string]: an
 		out.target = actor and actor.model.PrimaryPart
 		out.targetActor = nil
 	end
-	if typeof(out.fromPoint) == "table" then
-		out.from = Points.position(out.fromPoint :: any, Actors.lookup(r.registry))
-		out.fromPoint = nil
+	-- any "<name>Point" = a cutscene Point resolved to a world position under "<name>"
+	-- (fromPoint -> from, toPoint -> to, atPoint -> at, originPoint -> origin, centerPoint -> center)
+	for k, v in params do
+		if typeof(k) == "string" and typeof(v) == "table" and string.sub(k, -5) == "Point" then
+			out[string.sub(k, 1, -6)] = Points.position(v :: any, Actors.lookup(r.registry))
+			out[k] = nil
+		end
 	end
 	return out
 end

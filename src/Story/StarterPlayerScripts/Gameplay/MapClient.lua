@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
+local FaceController = require(Shared:WaitForChild("Visual"):WaitForChild("FaceController"))
 local PoseAnimator = require(Shared:WaitForChild("Visual"):WaitForChild("PoseAnimator"))
 
 local MapClient = {}
@@ -59,7 +60,25 @@ local function refreshNpc(model: Model, a: PoseAnimator.PoseAnimator)
 	end
 end
 
+-- pixel faces for server models (villagers, bosses): DefaultFace, then the attribute Face
+local function addFace(inst: Instance)
+	if not inst:IsA("Model") or inst:GetAttribute("_FaceHooked") then
+		return
+	end
+	local model = inst
+	model:SetAttribute("_FaceHooked", true)
+	local function apply()
+		local face = model:GetAttribute("Face") or model:GetAttribute("DefaultFace")
+		if typeof(face) == "string" and FaceController.get(model) then
+			FaceController.set(model, face)
+		end
+	end
+	model:GetAttributeChangedSignal("Face"):Connect(apply)
+	apply()
+end
+
 local function addNpc(inst: Instance)
+	addFace(inst)
 	if inst:IsA("Model") and not npcAnimators[inst] then
 		local model = inst
 		local a = PoseAnimator.new(model)
@@ -86,6 +105,10 @@ function MapClient.init()
 	for _, m in CollectionService:GetTagged("NPC") do
 		addNpc(m)
 	end
+	for _, m in CollectionService:GetTagged("Faced") do
+		addFace(m)
+	end
+	CollectionService:GetInstanceAddedSignal("Faced"):Connect(addFace)
 	CollectionService:GetInstanceAddedSignal("NPC"):Connect(addNpc)
 	CollectionService:GetInstanceRemovedSignal("NPC"):Connect(function(inst)
 		local a = npcAnimators[inst :: any]

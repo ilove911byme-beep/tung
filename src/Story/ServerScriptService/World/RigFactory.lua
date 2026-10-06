@@ -282,6 +282,15 @@ local function buildCustom(id: string, def: RigSpecs.CharacterDef): Model
 	for _, p in parts do
 		p.Parent = model
 	end
+	local glowDef = def.glow
+	if glowDef then
+		local glow = Instance.new("PointLight")
+		glow.Name = "Glow"
+		glow.Color = Color3.fromHex(glowDef.color)
+		glow.Range = glowDef.range
+		glow.Brightness = glowDef.brightness
+		glow.Parent = parts[rootName]
+	end
 	addAccessories(model, def, parts)
 	model.PrimaryPart = parts[rootName]
 	model:SetAttribute("RootHeight", def.rootHeight or 0)

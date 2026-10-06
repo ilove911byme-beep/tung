@@ -244,14 +244,20 @@ function ParkourService._fall(self: Segment, player: Player, lava: boolean?)
 end
 
 --- Starts watching these players (falls / finish). Players start at the segment start.
+--- Can be called again for more players (one watcher per segment).
 function ParkourService.track(self: Segment, players: { Player }, teleport: boolean?)
-	self.tracking = true
 	for i, p in players do
-		self.states[p] = { falls = 0, checkpoint = self.startCf, finished = false }
+		if not self.states[p] then
+			self.states[p] = { falls = 0, checkpoint = self.startCf, finished = false }
+		end
 		if teleport and p.Character then
 			p.Character:PivotTo(self.startCf * CFrame.new((i - 1) * 2, 0, 0))
 		end
 	end
+	if self.tracking then
+		return
+	end
+	self.tracking = true
 	local killY = (self.origin * CFrame.new(0, self.def.killY * S, 0)).Position.Y
 	table.insert(
 		self.connections,
@@ -269,6 +275,17 @@ function ParkourService.track(self: Segment, players: { Player }, teleport: bool
 			end
 		end)
 	)
+end
+
+--- Stops watching a player (they left the course on purpose).
+function ParkourService.untrack(self: Segment, player: Player)
+	self.states[player] = nil
+end
+
+--- True while the player is on the course and has not finished it.
+function ParkourService.isRunning(self: Segment, player: Player): boolean
+	local s = self.states[player]
+	return s ~= nil and not s.finished
 end
 
 function ParkourService.falls(self: Segment, player: Player): number

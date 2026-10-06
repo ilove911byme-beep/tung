@@ -212,9 +212,30 @@ m2:play("A-BALLERINA_DANCE", { speed = 0.5 })
 local after = m2:step().Root.rot[2]
 check(near(before, after, 1e-3), "changing speed does not jump")
 
+------------------------------------------------------------------ dialogues
+for name, d in pairs(__dialogues) do
+	check(d.id == name, name .. ": dialogue id must equal the file name")
+	check(d.nodes[d.start] ~= nil, name .. ": start node missing")
+	for key, node in pairs(d.nodes) do
+		for _, lineId in ipairs(node.lines or {}) do
+			check(lineById[lineId] ~= nil, name .. "/" .. key .. ": unknown line " .. lineId)
+		end
+		if node.next then
+			check(d.nodes[node.next] ~= nil, name .. "/" .. key .. ": next node missing " .. node.next)
+		end
+		for _, c in ipairs(node.choices or {}) do
+			if c.next then
+				check(d.nodes[c.next] ~= nil, name .. "/" .. key .. ": choice " .. c.id .. " -> missing node " .. c.next)
+			end
+		end
+	end
+	print("dialogue " .. name .. " checked")
+end
+
 print(string.format("%d checks, %d failures", checks, failures))
 if failures > 0 then
 	print("FAIL")
 else
 	print("PASS")
 end
+

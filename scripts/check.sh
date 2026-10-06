@@ -25,7 +25,9 @@ else
 fi
 if [ -x "$LUAU" ]; then
 	echo "== check_data =="
-	python3 tools/check_data.py --luau "$LUAU" | tail -3
+	DATA=$(python3 tools/check_data.py --luau "$LUAU")
+	echo "$DATA" | tail -3
+	echo "$DATA" | grep -q "^PASS$" || { echo "$DATA" | grep -i "fail\|unknown\|missing" | head -20; exit 1; }
 fi
 echo "== rojo build =="
 mkdir -p build

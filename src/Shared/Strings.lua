@@ -142,6 +142,14 @@ Strings.Speakers = {
 	Banana = "Banana",
 } :: { [string]: string }
 
+-- Boss intro cards (cutscenes.md: BOSS INTRO CARD)
+Strings.Bosses = {
+	Falsino = { title = "FALSINO", subtitle = "the Liar" },
+	Negatino = { title = "NEGATINO", subtitle = "the Light-Eater" },
+	Crudelino = { title = "CRUDELINO", subtitle = "the Cruel One" },
+	Totale = { title = "GIALLINO TOTALE", subtitle = "Everything You Feared" },
+}
+
 Strings.Journal = {
 	Title = "JOURNAL",
 	TabClues = "Clues",

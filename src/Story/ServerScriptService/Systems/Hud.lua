@@ -59,6 +59,14 @@ function Hud.worldFx(kind: string, params: any?)
 	end
 end
 
+--- A WorldFx effect for some players only (blindness, color drain near Negatino...).
+function Hud.worldFxFor(players: { Player }, kind: string, params: any?)
+	local remote = Remotes.get(Remotes.Names.WorldFx)
+	for _, p in players do
+		remote:FireClient(p, kind, params)
+	end
+end
+
 function Hud.giallinoSay(text: string, players: { Player }?)
 	local remote = Remotes.get(Remotes.Names.GiallinoSay)
 	local list: { Player } = players or all()

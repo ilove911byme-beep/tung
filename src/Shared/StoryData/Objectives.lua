@@ -17,6 +17,7 @@ local Objectives: { [string]: string } = {
 	C2_FIRE = "Keep the fire burning until dawn (%d s)",
 	-- Chapter 3
 	C3_CLUES = "Find clues (%d/7 real). Talk to the villagers.",
+	C3_READY = "Real clues: %d/7. Keep searching, or go to the square to face the truth.",
 	C3_ROOFTOPS = "Climb the rooftops to the bakery",
 	C3_FALSINO = "Truth or lie: vote for the lie (round %d/3)",
 	C3_ACCUSE = "Who knocks at night?",
@@ -25,6 +26,8 @@ local Objectives: { [string]: string } = {
 	C4_KEEP_LIT = "Keep all 4 braziers burning!",
 	C4_RUN = "RUN to the forest!",
 	C4_FOREST = "Get through the forest to the mine",
+	C4_GORGE = "Cross the gorge",
+	C4_DETOUR = "Go round the long way: jump across the narrow end of the gorge",
 	-- Chapter 5
 	C5_CODE = "Open the mine door",
 	C5_RIDE = "Ride the minecarts: lean and duck!",

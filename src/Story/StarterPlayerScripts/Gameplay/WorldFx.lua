@@ -12,6 +12,10 @@
 --   beam {at, duration}           a huge yellow beam into the sky
 --   colorDrain {amount, duration} the colors drain away (Negatino)
 --   shuttersOpen                  every shutter opens again (morning)
+--   blind {duration, opacity}     the screen goes dark for a moment (Negatino's touch)
+--   blackout {duration}           fade through black (scene transitions)
+--   convergeBeams {from, to, duration} beams from points meet in one (CS-11)
+--   debrisBurst {at, count}       chunks burst outward (CS-13 bell tower)
 --   sfx {name, at, volume}        a one-shot sound for everybody (3D at `at`)
 --   silence {duration}            every sound group fades to silence, then comes back (CS-04)
 --   loadingScreen {duration, greet} the loading screen plays over everything (CS-00)
@@ -23,6 +27,8 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Audio = require(Shared:WaitForChild("Audio"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local LoadingScreen = require(Shared:WaitForChild("UI"):WaitForChild("LoadingScreen"))
+
+local Overlay = require(script.Parent.Parent:WaitForChild("Cutscene"):WaitForChild("Overlay"))
 
 local WorldFx = {}
 
@@ -329,7 +335,101 @@ local function shuttersOpen()
 	end
 end
 
+-- light beams that shoot from several points and meet in one (CS-11: the four braziers)
+local function convergeBeams(params: { [string]: any })
+	local froms: { Vector3 } = params.from or {}
+	local to: Vector3 = params.to or Vector3.zero
+	local duration = params.duration or 3
+	local color = params.color or Color3.fromRGB(255, 170, 70)
+	local beams: { Part } = {}
+	for _, from in froms do
+		local p = Instance.new("Part")
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CastShadow = false
+		p.Material = Enum.Material.Neon
+		p.Color = color
+		p.Transparency = 0.15
+		p.Size = Vector3.new(1.2, 1.2, 0.1)
+		p.CFrame = CFrame.lookAt(from, to)
+		p.Parent = workspace
+		table.insert(beams, p)
+	end
+	local start = os.clock()
+	task.spawn(function()
+		while os.clock() - start < duration do
+			local a = math.clamp((os.clock() - start) / (duration * 0.6), 0, 1)
+			for i, p in beams do
+				local from = froms[i]
+				local tip = from:Lerp(to, a)
+				local length = math.max((tip - from).Magnitude, 0.1)
+				p.Size = Vector3.new(1.2, 1.2, length)
+				p.CFrame = CFrame.lookAt(from, to) * CFrame.new(0, 0, -length / 2)
+			end
+			task.wait()
+		end
+		for _, p in beams do
+			TweenService:Create(p, TweenInfo.new(0.6), { Transparency = 1 }):Play()
+			task.delay(0.7, function()
+				p:Destroy()
+			end)
+		end
+	end)
+end
+
+-- chunks of a roof burst outward from a point (CS-13: Giallino breaks out of the bell tower)
+local function debrisBurst(params: { [string]: any })
+	local at: Vector3 = params.at or Vector3.zero
+	local colors: { Color3 } = params.colors
+		or { Color3.fromHex("#7A5230"), Color3.fromHex("#9A4636"), Color3.fromHex("#767676") }
+	for i = 1, params.count or 30 do
+		local size = 1 + math.random() * 2.5
+		local p = Instance.new("Part")
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.Size = Vector3.new(size, size, size)
+		p.Color = colors[(i % #colors) + 1]
+		p.Material = Enum.Material.WoodPlanks
+		p.CFrame = CFrame.new(
+			at + Vector3.new(math.random() - 0.5, math.random(), math.random() - 0.5) * 8
+		)
+		p.Parent = workspace
+		local vel = Vector3.new(math.random() - 0.5, 0.6 + math.random(), math.random() - 0.5).Unit
+			* (40 + math.random() * 30)
+		local spin = Vector3.new(math.random(), math.random(), math.random()) * 6
+		local t0 = os.clock()
+		task.spawn(function()
+			local pos = p.Position
+			while os.clock() - t0 < 3 do
+				local dt = task.wait()
+				vel += Vector3.new(0, -80 * dt, 0)
+				pos += vel * dt
+				p.CFrame = CFrame.new(pos)
+					* CFrame.Angles(spin.X * (os.clock() - t0), spin.Y * (os.clock() - t0), 0)
+			end
+			p:Destroy()
+		end)
+	end
+end
+
+-- the screen goes dark (Negatino's touch: 3 s) or fades through black (scene transitions)
+local function blind(params: { [string]: any })
+	local duration = params.duration or 3
+	Overlay.fadeTo(Color3.new(0, 0, 0), params.opacity or 0.92, 0.15)
+	task.delay(duration, function()
+		Overlay.fadeTo(Color3.new(0, 0, 0), 0, 0.6)
+	end)
+end
+
 local HANDLERS: { [string]: ({ [string]: any }) -> () } = {
+	blind = blind,
+	blackout = function(params: { [string]: any })
+		blind({ duration = params.duration or 1.5, opacity = 1 })
+	end,
+	convergeBeams = convergeBeams,
+	debrisBurst = debrisBurst,
 	shuttersOpen = function()
 		shuttersOpen()
 	end,

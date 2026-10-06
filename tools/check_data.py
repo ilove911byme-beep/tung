@@ -42,6 +42,19 @@ EXPECTED = {
     "CS_04A": [("main", "1", 0, 3), ("main", "2", 3, 6), ("main", "3", 6, 7), ("main", "4", 7, 10)],
     "CS_06": [("main", "1", 0, 4), ("main", "2", 4, 9), ("main", "3", 9, 13), ("main", "4", 13, 18),
               ("main", "5", 18, 22), ("main", "6", 22, 30), ("main", "7", 30, 38)],
+    "CS_07": [("main", "1", 0, 4), ("main", "2", 4, 8), ("main", "3", 8, 12), ("main", "4", 12, 18)],
+    "CS_08": [("main", "1", 0, 5), ("main", "2", 5, 9), ("main", "3", 9, 12)],
+    "CS_09T": [("main", "1", 0, 5), ("main", "2", 5, 10), ("main", "3", 10, 15), ("main", "4", 15, 20), ("main", "5", 20, 25)],
+    "CS_09C": [("main", "1", 0, 5), ("main", "2", 5, 10), ("main", "3", 10, 15), ("main", "4", 15, 20), ("main", "5", 20, 25)],
+    "CS_09B": [("main", "1", 0, 5), ("main", "2", 5, 10), ("main", "3", 10, 15), ("main", "4", 15, 20), ("main", "5", 20, 25)],
+    "CS_10": [("main", "1", 0, 4), ("main", "2", 4, 8), ("main", "3", 8, 14), ("main", "4", 14, 20), ("main", "5", 20, 26),
+              ("main", "6", 26, 30)],
+    "CS_11": [("main", "1", 0, 4), ("main", "2", 4, 8), ("main", "3", 8, 14)],
+    "CS_12": [("free", "1", 0, 4), ("free", "2", 4, 10), ("free", "3", 10, 16), ("free", "4", 16, 22), ("free", "5", 22, 28),
+              ("jailed", "1", 0, 4), ("jailed", "2", 4, 10), ("jailed", "3", 10, 16), ("jailed", "4", 16, 22),
+              ("jailed", "5", 22, 28)],
+    "CS_13": [("main", "1", 0, 4), ("main", "2", 4, 7), ("main", "3", 7, 10)],
+    "CS_14": [("main", "1", 0, 5), ("main", "2", 5, 10), ("main", "3", 10, 17), ("main", "4", 17, 23), ("main", "5", 23, 30)],
     "CS_DOWN": [("main", "1", 0, 2)],
     "CS_DEAD": [("main", "1", 0, 2), ("main", "2", 2, 5)],
     "CS_REVIVE": [("main", "1", 0, 2)],
@@ -49,7 +62,7 @@ EXPECTED = {
 
 EFFECTS = ["PixelDissolve", "PixelAssemble", "LastPixel", "Shatter", "Melt", "Grow", "Shrink",
            "WallBreak", "RootsBridge", "Bloom", "TimeFreeze", "TimeResume", "DropItem", "ShowPart",
-           "HidePart"]
+           "HidePart", "Transform", "Wither", "DirtBurst"]
 
 SHIMS = r"""
 Vector3 = { new = function(x, y, z) return { X = x, Y = y, Z = z } end }
@@ -106,6 +119,12 @@ def build():
     for fn in sorted(os.listdir(cdir)):
         if fn.endswith(".lua"):
             parts.append(f'__cutscenes["{fn[:-4]}"] = {module_expr(load(os.path.join(cdir, fn)), m_types)}')
+    # dialogues
+    parts.append("local __dialogues = {}")
+    ddir = os.path.join(SHARED, "Dialogues")
+    for fn in sorted(os.listdir(ddir)):
+        if fn.endswith(".lua"):
+            parts.append(f'__dialogues["{fn[:-4]}"] = {module_expr(load(os.path.join(ddir, fn)), {})}')
     expected = "{" + ",".join(
         f'["{cs}"]=' + "{" + ",".join(f'{{seg="{s}",n="{n}",t0={a},t1={b}}}' for s, n, a, b in rows) + "}"
         for cs, rows in EXPECTED.items()) + "}"
