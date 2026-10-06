@@ -213,8 +213,18 @@ end
 --- A cutscene copy of the n-th party member's avatar (players sorted by UserId), ready to be
 --- posed: anchored root, no collisions, no scripts, Humanoid kept for clothing. nil if no such
 --- player.
+local standInPlayers: { Player }? = nil
+
+--- Who the stand-ins @Player1..6 are (the lobby passes the riders of one minecart for CS-00).
+--- nil = every player in the server, ordered by UserId.
+function Actors.setStandInPlayers(list: { Player }?)
+	standInPlayers = list
+end
+
 function Actors.standIn(n: number): Model?
-	local list = game:GetService("Players"):GetPlayers()
+	local list = if standInPlayers
+		then table.clone(standInPlayers)
+		else game:GetService("Players"):GetPlayers()
 	table.sort(list, function(a, b)
 		return a.UserId < b.UserId
 	end)

@@ -2,7 +2,8 @@
 """Runs the Story place MapBuilder in the Luau CLI against a small Roblox mock and renders the
 result: a top-down map and isometric close-ups (PNG), plus the part count.
 
-Usage: python3 tools/map_preview/run.py --luau /path/to/luau --out DIR
+Usage: python3 tools/map_preview/run.py --luau /path/to/luau --out DIR [--lobby]
+(--lobby builds the Lobby place world instead: the station, the tunnel and the valley.)
 """
 import argparse
 import json
@@ -31,7 +32,16 @@ def collect(rel_dir):
     return sorted(files)
 
 
-def build_chunk():
+LOBBY_MOUNTS = [
+    ("ReplicatedStorage/Shared", "src/Shared"),
+    ("ServerScriptService", "src/Lobby/ServerScriptService"),
+]
+LOBBY_FILES = [
+    ("ServerScriptService/World", "src/Story/ServerScriptService/World/Map/Builder.lua"),
+]
+
+
+def build_chunk(lobby=False):
     out = []
     with open(os.path.join(HERE, "roblox_mock.luau"), encoding="utf-8") as f:
         out.append("local __mock = (function()\n" + f.read() + "\nend)()")
@@ -43,8 +53,17 @@ def build_chunk():
     out.append("local __cache = {}")
     out.append("local require")
     paths = []
-    for mount, rel in MOUNTS:
+    mounts = LOBBY_MOUNTS if lobby else MOUNTS
+    singles = LOBBY_FILES if lobby else []
+    for mount, path in singles:
+        with open(os.path.join(ROOT, path), encoding="utf-8") as f:
+            src = f.read()
+        out.append(f"__files[{json.dumps(path)}] = function(script)\n{src}\nend")
+        paths.append((mount, os.path.dirname(path), path))
+    for mount, rel in mounts:
         for path in collect(rel):
+            if path.endswith(".server.lua") or path.endswith(".client.lua"):
+                continue
             with open(os.path.join(ROOT, path), encoding="utf-8") as f:
                 src = f.read()
             out.append(f"__files[{json.dumps(path)}] = function(script)\n{src}\nend")
@@ -90,6 +109,25 @@ end
 	end
 	m:SetAttribute("__path", {json.dumps(path)})
 end""")
+    if lobby:
+        out.append("""
+local SSS = game:GetService("ServerScriptService")
+local map = require(SSS.LobbyWorld).build()
+local lines = {}
+for _, d in map:GetDescendants() do
+	if d:IsA("BasePart") then
+		local c = d.CFrame
+		local s = d.Size
+		local col = d.Color or Color3.new(0.8, 0.8, 0.8)
+		local r = c.r
+		table.insert(lines, string.format("P %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %s %s",
+			c.p.X, c.p.Y, c.p.Z, r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], s.X, s.Y, s.Z,
+			col.R, col.G, col.B, tostring(d.Transparency or 0), d.Name))
+	end
+end
+print(table.concat(lines, "\\n"))
+""")
+        return "\n".join(out)
     out.append("""
 local SSS = game:GetService("ServerScriptService")
 local RigFactory = require(SSS.World.RigFactory)
@@ -119,7 +157,7 @@ print(table.concat(lines, "\\n"))
     return "\n".join(out)
 
 
-def render(parts, out_dir):
+def render(parts, out_dir, lobby=False):
     from PIL import Image, ImageDraw
     os.makedirs(out_dir, exist_ok=True)
     S = 4
@@ -150,12 +188,13 @@ def render(parts, out_dir):
     img.save(os.path.join(out_dir, "map_top.png"))
 
     # isometric views of areas (studs): (name, cx, cz, radius, yaw deg)
-    views = [("iso_village", 80 * S, 80 * S, 36 * S, 45), ("iso_square", 80 * S, 76 * S, 16 * S, 45),
+    views = [("iso_lobby_station", 22 * S, 30 * S, 22 * S, 160), ("iso_lobby_tunnel", 50 * S, 22 * S, 22 * S, 200),
+             ("iso_lobby_valley", 180 * S, 12 * S, 60 * S, 120)] if lobby else [("iso_village", 80 * S, 80 * S, 36 * S, 45), ("iso_square", 80 * S, 76 * S, 16 * S, 45),
              ("iso_station", 40 * S, 80 * S, 22 * S, 135), ("iso_forest", 35 * S, 128 * S, 24 * S, 45),
              ("iso_mine", 130 * S, 35 * S, 30 * S, 45), ("iso_tower", 80 * S, 66 * S, 10 * S, 225)]
     for name, cx, cz, rad, yaw in views:
         W, H = 1400, 1000
-        img = Image.new("RGB", (W, H), (140, 190, 235))
+        img = Image.new("RGB", (W, H), (78, 128, 50) if lobby else (140, 190, 235))
         d = ImageDraw.Draw(img)
         a = math.radians(yaw)
         ca, sa = math.cos(a), math.sin(a)
@@ -169,7 +208,7 @@ def render(parts, out_dir):
         faces = []
         under = name == "iso_mine"
         for p in parts:
-            if p["t"] >= 0.99 or p["sy"] > 300:
+            if p["t"] >= 0.99 or p["sy"] > 300 or (lobby and p["name"] == "Ground"):
                 continue
             if abs(p["px"] - cx) > rad * 1.6 or abs(p["pz"] - cz) > rad * 1.6:
                 continue
@@ -205,8 +244,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--luau", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--lobby", action="store_true")
     args = ap.parse_args()
-    chunk = build_chunk()
+    chunk = build_chunk(args.lobby)
     with tempfile.NamedTemporaryFile("w", suffix=".luau", delete=False) as f:
         f.write(chunk)
         path = f.name
@@ -225,7 +265,7 @@ def main():
         else:
             print(line)
     print(f"{len(parts)} parts")
-    render(parts, args.out)
+    render(parts, args.out, args.lobby)
     print("rendered to", args.out)
 
 

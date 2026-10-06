@@ -72,7 +72,7 @@ Open this repo in Claude Code on the web (claude.ai/code) and write: **«Нач�
 ## Как проверить, что Phase 0 работает
 
 1. Открой `Story.rbxl` в Studio, нажми **Play**.
-2. В Output должно быть: `[NIGHT IN BRAINROT VALLEY] Story place booted. place=Unknown version=0.0.1-phase0 skipLobby=true` (`place=Unknown` — нормально, пока плейс не опубликован и PlaceId не вписан).
+2. В Output должно быть: `[NIGHT IN BRAINROT VALLEY] Story place booted. place=Unknown version=… skipLobby=true` (`place=Unknown` — нормально, пока плейс не опубликован и PlaceId не вписан).
 3. То же для `Lobby.rbxl`: строка `Lobby place booted…`.
 4. В Explorer проверь: `ReplicatedStorage → Shared` содержит `Config`, `Strings`, `Types`, `UITheme`.
 5. Красных ошибок в Output быть не должно.

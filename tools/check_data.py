@@ -231,6 +231,18 @@ def check_story():
                 for entry in re.findall(r'(?:then|else)\s+"([a-zA-Z]+)"', rest):
                     if cs in cutscenes and not re.search(r'\b' + entry + r' = \{', cutscenes[cs]):
                         errors.append(f"FAIL story {where}: cutscene {cs} has no entry {entry}")
+    # lobby scripts: voice lines and animations named in them
+    anims = {n[:-4].replace("A_", "A-", 1) for n in os.listdir(os.path.join(SHARED, "Animations")) if n.endswith(".lua")}
+    for dirpath, _, files in os.walk(os.path.join(ROOT, "src", "Lobby")):
+        for name in files:
+            if name.endswith(".lua"):
+                src = read(os.path.relpath(os.path.join(dirpath, name), ROOT))
+                for v in re.findall(r'"((?:LOBBY|CHANT)_[A-Z0-9_]+)"', src):
+                    if v not in voice:
+                        errors.append(f"FAIL lobby {name}: unknown line {v}")
+                for v in re.findall(r'"(A-[A-Z0-9_]+)"', src):
+                    if v not in anims:
+                        errors.append(f"FAIL lobby {name}: unknown animation {v}")
     for e in errors:
         print(e)
     print(f"story scripts checked, {len(errors)} problems")

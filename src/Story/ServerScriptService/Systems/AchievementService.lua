@@ -52,6 +52,16 @@ function AchievementService.award(player: Player, id: string)
 	end
 end
 
+--- The ids this player earned in this server (handed back to the lobby after the ending).
+function AchievementService.earned(player: Player): { string }
+	local out = {}
+	local mine: { [string]: boolean } = awarded[player.UserId] or {}
+	for id in mine do
+		table.insert(out, id)
+	end
+	return out
+end
+
 function AchievementService.awardAll(players: { Player }?, id: string)
 	for _, p in players or Players:GetPlayers() do
 		AchievementService.award(p, id)

@@ -5,7 +5,7 @@ local RunService = game:GetService("RunService")
 local Config = {}
 
 Config.GameName = "Night in Brainrot Valley"
-Config.Version = "0.0.1-phase0"
+Config.Version = "0.9.0-phase5.5"
 
 -- Paste the real PlaceIds here after publishing both places into ONE universe (see README).
 -- 0 = not set yet.

@@ -7,6 +7,7 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
+local Audio = require(script.Parent.Parent:WaitForChild("Audio"))
 local Strings = require(script.Parent.Parent:WaitForChild("Strings"))
 local UITheme = require(script.Parent.Parent:WaitForChild("UITheme"))
 
@@ -103,6 +104,23 @@ function LoadingScreen.build(): (ScreenGui, (number) -> (), TextLabel)
 	local limit = Instance.new("UITextSizeConstraint")
 	limit.MaxTextSize = 28
 	limit.Parent = text
+	-- a random tip at the bottom
+	local tips = Strings.Loading.Tips
+	local tip = Instance.new("TextLabel")
+	tip.Name = "Tip"
+	tip.AnchorPoint = Vector2.new(0.5, 1)
+	tip.Position = UDim2.new(0.5, 0, 1, -28)
+	tip.Size = UDim2.new(0.86, 0, 0, 48)
+	tip.BackgroundTransparency = 1
+	tip.Font = UITheme.Fonts.Body
+	tip.TextColor3 = UITheme.Colors.TextDim
+	tip.TextScaled = true
+	tip.TextWrapped = true
+	tip.Text = Strings.Loading.TipsTitle .. ": " .. tips[math.random(1, #tips)]
+	tip.Parent = bg
+	local tipLimit = Instance.new("UITextSizeConstraint")
+	tipLimit.MaxTextSize = 22
+	tipLimit.Parent = tip
 	local function setProgress(p: number)
 		p = math.clamp(p, 0, 1)
 		local lit = math.floor(p * #pixels + 0.5)
@@ -139,6 +157,7 @@ function LoadingScreen.show(): Handle
 				return
 			end
 			setProgress(1)
+			Audio.play("giallino_boot", nil, { volume = 0.8, group = "SFX" })
 			if greet ~= false then
 				-- one frame only, like a glitch (screenplay P-1)
 				text.Text = (string.gsub(Strings.Loading.Hello, "%[Name%]", player.DisplayName))

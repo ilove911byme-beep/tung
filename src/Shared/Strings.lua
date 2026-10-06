@@ -19,6 +19,10 @@ Strings.Menu = {
 	Back = "BACK",
 	Locked = "LOCKED",
 	Unknown = "???",
+	Selected = "SELECTED",
+	Select = "SELECT",
+	ChaptersHint = "Finish the story once to replay any chapter.",
+	EndingsHint = "Three endings wait in the valley.",
 }
 
 Strings.Chapters = {
@@ -103,9 +107,18 @@ Strings.Queue = {
 }
 
 Strings.Lobby = {
-	SpeakerAnnouncement = "Last stop: Brainrot Valley. Please keep your hands inside the minecart. And your lantern lit.",
 	AuraBoard = "AURA",
+	AuraEmpty = "No aura yet. Be brave.",
 	SixSevenSign = "6 7",
+	Emotes = "Emotes",
+	Emote67 = "6 7",
+	EmoteAura = "Aura pose",
+	EmoteBrainrot = "Brainrot dance",
+	EmoteBat = "Bat swing",
+	TeleportFailed = "The minecart could not reach the valley. Try again.",
+	StudioNoTeleport = "Teleport only works in a published game (set Config.PlaceIds).",
+	ChapterChosen = "Chapter %d selected",
+	Hint = "Step into a minecart to queue",
 }
 
 Strings.Dialogue = {

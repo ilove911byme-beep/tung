@@ -18,7 +18,7 @@
 | 3 — Пролог + главы 1–2, CS-00…CS-06 | ✅ | см. git log |
 | 4 — главы 3–4, CS-07…CS-14 | ✅ | см. git log |
 | 5 — главы 5–6, CS-15…CS-23, концовки, служебные | ✅ | см. git log |
-| 5.5 — меню, лобби, очередь, загрузка, телепорт, мемы | ⏳ | |
+| 5.5 — меню, лобби, очередь, загрузка, телепорт, мемы | ✅ | см. git log |
 | 6 — полировка | ⏳ | |
 
 ---
@@ -260,3 +260,58 @@ Crudelino после его рывка; с `/flags jailed Bombardiro` — кам
 ⚠️ Known issues: проверено статически (типы, данные, тайминги, ссылки глав на реплики/цели/катсцены/
 звуки/точки). Баланс (скорость вагонеток 3.5 блока/с, окна QTE 1.6 с, рывки 70 studs/s, урон тьмы) и
 высоты паркуров по небу/дыре не проверены в движке. Возврат в лобби после титров — в фазе 5.5.
+
+## Phase 5.5 — меню, лобби, очередь, загрузка, телепорт, мемы ✅
+✅ Done: Lobby-плейс собран полностью. Мир (`LobbyWorld`): станция «LAST STOP» в сумерках — платформа,
+фонари, касса, доска объявлений с постерами («MISSING: Ballerina Cappuccina», «Do not go out after dark»,
+«Lost: one clock. Ask Lirili»), главная линия в чёрный туннель через холм (лампы TunnelLamp для CS-00),
+4 вагонетки на запасных путях, угол мемов (сцена эмоций, большая табличка «6 7», доска AURA), стена концовок
+с тремя картинами, туманный холм с Tung Tung на севере, ночная долина за туннелем для облёта меню (холмы,
+деревья, деревня с тёплыми окнами, часовая башня). Главное меню: облёт камеры по сплайну, Blur 6, виньетка,
+леттербокс, заголовок Creepster #FF9A3C со свечением и глитчем каждые ~20 с (буквы, glitch_burst, Giallino
+на 1 кадр красный), солнце у заголовка, парящий Giallino (покачивание, моргание, глаза следят за мышью),
+кнопки выезжают слева со сдвигом 0.06 с, hover 1.05 + обводка + vote_tick, клик 0.95 + item_pickup;
+страницы CHAPTERS (6 карточек с блочными миниатюрами, замки, выбор главы уходит в TeleportData),
+ENDINGS (3 силуэта, «???»), ACHIEVEMENTS (30 бейджей по редкостям, секретные «???»), SETTINGS (4 громкости,
+субтитры, голоса, тряска камеры, графика — уходят в Story через TeleportData), CREDITS (прокрутка); PLAY —
+пролёт камеры к станции, UI гаснет, управление игроку. Мета-эффект ENDLESS NIGHT: солнце один раз — Giallino
+и подмигивает. GIALLINO_STARE: 60 с без движения мыши в меню (сервер проверяет время с входа). Очередь
+(`QueueService`): Seat-ы (6 мест), подсказка «Get in», владелец = первый, Public/Friends only
+(IsFriendsWithAsync), 20 с отсчёт с перезапуском при входе, «Start now», «Leave», Billboard «3/6 · Starting
+in 12»; запуск — защёлка, у пассажиров CS-00 с их аватарами, настоящая вагонетка уезжает в туннель для
+остальных, ReserveServer + TeleportAsync с {partyId, members, chosenChapter, settings}, 2 попытки, при неудаче
+вагонетка возвращается. Экран загрузки: тот же дизайн в TeleportGui и в ReplicatedFirst Story-плейса
+(совет TIP, giallino_boot на 100 %, закрывается по старту истории). Возврат в лобби после титров
+(`ReturnService`) с концовкой, ачивками забега и аурой. Мемы: эмоции-колесо (кнопка или G): «6 7», поза
+ауры, brainrot-танец, удар битой Tung (с битой в руке) — атрибут на сервере, анимация на всех клиентах;
+«6 7» на сцене = +67 ауры и реплика Udin; доска AURA (сессия) в мире, мини-список в HUD и в титрах концовки;
+камео Trippi Troppi, Boneca Ambalabu, Udin Din Din Dun, La Vaca Saturno, Frigo Camelo, Glorbo Fruttodrillo с
+напевами и лобби-репликами; объявление станции.
+📁 Files: `src/Lobby/ServerScriptService/{Bootstrap.server,LobbyWorld,LobbyProfiles,QueueService,LobbyLife}.lua`,
+`src/Lobby/StarterPlayerScripts/LobbyClient.client.lua`, `src/Lobby/StarterPlayerScripts/Lobby/{MainMenu,LobbyHud,
+Profile,Emotes,Launch,Teasers}.lua`, `lobby.project.json` (подключает общие клиентские модули Story: Audio, Cutscene,
+Settings, UI/Screen, Subtitles, StoryScreens, Gameplay/WorldFx, MapClient; на сервере RigFactory и Builder),
+`src/Shared/VoiceLines/Lobby.lua`, `src/Shared/Animations/A_EMOTE_{67,AURA,BRAINROT,BAT}.lua`, `src/Shared/Remotes.lua`,
+`src/Shared/Strings.lua`, `src/Shared/UI/LoadingScreen.lua`, `src/Story/ReplicatedFirst/Loading.client.lua`,
+`src/Story/ServerScriptService/Systems/ReturnService.lua`, правки Story Client (настройки из TeleportData),
+AchievementService.earned, Actors.setStandInPlayers, StoryScreens (аура в титрах), `tools/map_preview/run.py --lobby`.
+🎬 Cutscene checklist: CS-00 ✅ (играет в лобби у пассажиров вагонетки, со стенд-инами), анимации A-EMOTE_67 ✅,
+A-EMOTE_AURA ✅, A-EMOTE_BRAINROT ✅, A-EMOTE_BAT ✅.
+🧪 How to test (Studio): открыть `build/Lobby.rbxl` → Play: меню с облётом долины, заголовок глитчит раз в ~20 с;
+пройти по страницам; не трогать мышь 60 с → тост «Staring Contest»; PLAY → камера к станции. E у вагонетки
+(или сесть) → панель «Minecart 1 · 1/6 · Starting in 20», Friends only / Start now / Leave; через 20 с — CS-00,
+затем в Studio тост «Teleport only works in a published game» и возврат на платформу. Эмоции: кнопка Emotes
+или G; «6 7» на сцене → реплика Udin и +67 на доске AURA. Подойти к холму на севере → Tung исчезает со стуком.
+Live: опубликовать оба плейса в одной вселенной, вписать `Config.PlaceIds`, запустить через Roblox Player.
+Story с `Config.SkipLobby = true` в Studio стартует главу 1 сразу (экран загрузки закрывается по старту).
+Решения (сам):
+- Солнце у заголовка + парящий Giallino: обычное меню показывает солнце, после ENDLESS NIGHT оно один раз Giallino.
+- Разблокировка глав = любой бейдж концовки (или концовка в последнем забеге), без DataStore.
+- Настройки и выбор главы передаются в Story через TeleportData (общий для группы, по UserId).
+- Аура в лобби — из последнего забега (TeleportData) + бонус «6 7» на сцене; только на сессию.
+- partyId без HttpService (UserId + время + случайное число), чтобы не трогать HttpService.
+- Эмоции рисуются локально на всех клиентах по атрибуту (C0 моторов не реплицируется) — без загрузки анимаций.
+⚠️ Known issues: телепорт и BadgeService проверяются только в опубликованной игре; в облаке проверены типы,
+линтер, данные и сборка мира лобби в Luau-моке (940 частей, рендер станции/туннеля). Вид UI на 360×640 и
+1920×1080 не проверен глазами (раскладка рассчитана: портрет — всё в столбик, ландшафт — кнопки слева).
+R6-аватары не анимируются эмоциями (имена моторов R15).

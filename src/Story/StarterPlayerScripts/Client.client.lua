@@ -1,7 +1,9 @@
 --!strict
 -- Story place client entry point: audio, cutscenes, HUD and the gameplay clients.
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
+local TeleportService = game:GetService("TeleportService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Audio = require(Shared:WaitForChild("Audio"))
@@ -32,6 +34,21 @@ local MinecartClient = require(Gameplay:WaitForChild("MinecartClient"))
 -- our own HUD shows HP; the Roblox health bar would show the hidden real value
 pcall(function()
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+end)
+
+-- the settings picked in the lobby's main menu come along in the TeleportData
+pcall(function()
+	local data = TeleportService:GetLocalPlayerTeleportData()
+	local mine = type(data) == "table"
+		and type((data :: any).settings) == "table"
+		and (data :: any).settings[tostring(Players.LocalPlayer.UserId)]
+	if type(mine) == "table" then
+		for key, value in mine do
+			if type(key) == "string" then
+				Settings.set(key, value)
+			end
+		end
+	end
 end)
 
 Audio.init()

@@ -124,6 +124,7 @@ function ChapterManager.run(startChapter: number, startStep: string?)
 	end
 	StoryFlags.get().startedAt = os.clock()
 	workspace:SetAttribute("StartChapter", startChapter) -- SPEEDRUN / NO_DEATHS need the whole story
+	workspace:SetAttribute("StoryStarted", true) -- the join loading screen closes
 	for index = startChapter, 6 do
 		local chapter = chapterModule(index)
 		if not chapter then

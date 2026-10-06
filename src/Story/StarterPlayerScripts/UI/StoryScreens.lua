@@ -208,6 +208,25 @@ function StoryScreens.credits(ending: string, duration: number)
 		line(row, false)
 	end
 	line(" ", false)
+	-- the session aura board (brief, <memes>): everybody's aura from this run
+	local rows = {}
+	for _, p in game:GetService("Players"):GetPlayers() do
+		table.insert(
+			rows,
+			{ name = p.DisplayName, aura = (p:GetAttribute("Aura") :: number?) or 0 }
+		)
+	end
+	table.sort(rows, function(a, b)
+		return a.aura > b.aura
+	end)
+	line(Strings.Lobby.AuraBoard, true)
+	for i, row in rows do
+		if i > 6 then
+			break
+		end
+		line(string.format("%d. %s  %d", i, row.name, row.aura), false)
+	end
+	line(" ", false)
 	line(Strings.Story.ThanksForPlaying, true)
 	TweenService:Create(
 		roll,

@@ -46,6 +46,17 @@ Remotes.Names = {
 	-- world
 	WorldFx = "WorldFx", -- s->c (kind, params)
 	GiallinoSay = "GiallinoSay", -- s->c (text) companion line outside cutscenes
+	-- lobby
+	LobbyCart = "LobbyCart", -- c->s (action: "leave" | "public" | "friends" | "start", arg)
+	LobbyCartState = "LobbyCartState", -- s->c (cartIndex, state) the local rider's cart panel
+	LobbyLaunch = "LobbyLaunch", -- s->c (cartIndex, startTime, riderUserIds) roll into the tunnel
+	LobbyProfile = "LobbyProfile", -- c->s (settings, chosenChapter) sent before riding
+	LobbyOwned = "LobbyOwned", -- s->c (ownedAchievementIds, lastEnding)
+	LobbyStare = "LobbyStare", -- c->s () the staring contest with the menu Giallino is won
+	LobbyEmote = "LobbyEmote", -- c->s (emoteId or "")
+	LobbyLine = "LobbyLine", -- s->c (lineId) a lobby NPC speaks to this player
+	LobbyToast = "LobbyToast", -- s->c (achievementId) unlocked in the lobby
+	LobbyAura = "LobbyAura", -- s->c ({ {name, aura} }) the session aura board
 } :: { [string]: string }
 
 local FOLDER = "Remotes"

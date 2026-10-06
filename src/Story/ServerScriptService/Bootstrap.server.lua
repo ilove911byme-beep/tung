@@ -29,6 +29,7 @@ local Hud = require(Systems:WaitForChild("Hud"))
 local InventoryService = require(Systems:WaitForChild("InventoryService"))
 local PartyService = require(Systems:WaitForChild("PartyService"))
 local QTEService = require(Systems:WaitForChild("QTEService"))
+local ReturnService = require(Systems:WaitForChild("ReturnService"))
 local StoryFlags = require(Systems:WaitForChild("StoryFlags"))
 
 local ChapterManager = require(SSS:WaitForChild("Story"):WaitForChild("ChapterManager"))
@@ -84,4 +85,8 @@ task.spawn(function()
 		return
 	end
 	ChapterManager.run(math.max(chapter, 1))
+	if StoryFlags.get().ending then
+		task.wait(4)
+		ReturnService.toLobby()
+	end
 end)

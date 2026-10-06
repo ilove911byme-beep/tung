@@ -14,13 +14,52 @@
     },
     "ServerScriptService": {
       "$className": "ServerScriptService",
-      "$path": "src/Lobby/ServerScriptService"
+      "$path": "src/Lobby/ServerScriptService",
+      "World": {
+        "$className": "Folder",
+        "RigFactory": {
+          "$path": "src/Story/ServerScriptService/World/RigFactory.lua"
+        },
+        "Builder": {
+          "$path": "src/Story/ServerScriptService/World/Map/Builder.lua"
+        }
+      }
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
-        "$path": "src/Lobby/StarterPlayerScripts"
+        "$path": "src/Lobby/StarterPlayerScripts",
+        "Audio": {
+          "$path": "src/Story/StarterPlayerScripts/Audio"
+        },
+        "Cutscene": {
+          "$path": "src/Story/StarterPlayerScripts/Cutscene"
+        },
+        "Settings": {
+          "$path": "src/Story/StarterPlayerScripts/Settings.lua"
+        },
+        "UI": {
+          "$className": "Folder",
+          "Screen": {
+            "$path": "src/Story/StarterPlayerScripts/UI/Screen.lua"
+          },
+          "Subtitles": {
+            "$path": "src/Story/StarterPlayerScripts/UI/Subtitles.lua"
+          },
+          "StoryScreens": {
+            "$path": "src/Story/StarterPlayerScripts/UI/StoryScreens.lua"
+          }
+        },
+        "Gameplay": {
+          "$className": "Folder",
+          "WorldFx": {
+            "$path": "src/Story/StarterPlayerScripts/Gameplay/WorldFx.lua"
+          },
+          "MapClient": {
+            "$path": "src/Story/StarterPlayerScripts/Gameplay/MapClient.lua"
+          }
+        }
       }
     },
     "Workspace": {
