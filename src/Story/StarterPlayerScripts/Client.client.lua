@@ -26,6 +26,7 @@ local DownedClient = require(Gameplay:WaitForChild("DownedClient"))
 local WorldFx = require(Gameplay:WaitForChild("WorldFx"))
 local FakeBlocks = require(Gameplay:WaitForChild("FakeBlocks"))
 local GiallinoClient = require(Gameplay:WaitForChild("GiallinoClient"))
+local MapClient = require(Gameplay:WaitForChild("MapClient"))
 
 -- our own HUD shows HP; the Roblox health bar would show the hidden real value
 pcall(function()
@@ -61,6 +62,7 @@ WorldFx.init()
 FakeBlocks.init()
 DownedClient.init()
 GiallinoClient.init()
+MapClient.init()
 
 if RunService:IsStudio() then
 	require(Root:WaitForChild("Dev"):WaitForChild("DebugClient")).init()

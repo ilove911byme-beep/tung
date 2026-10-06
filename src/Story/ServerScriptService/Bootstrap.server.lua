@@ -18,6 +18,7 @@ local Systems = SSS:WaitForChild("Systems")
 local CutsceneService = require(Services:WaitForChild("CutsceneService"))
 local VoteService = require(Services:WaitForChild("VoteService"))
 local RigFactory = require(SSS:WaitForChild("World"):WaitForChild("RigFactory"))
+local MapBuilder = require(SSS:WaitForChild("World"):WaitForChild("MapBuilder"))
 
 local AchievementService = require(Systems:WaitForChild("AchievementService"))
 local AtmosphereService = require(Systems:WaitForChild("AtmosphereService"))
@@ -36,6 +37,9 @@ StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
 
 Remotes.init()
 RigFactory.buildAll()
+if not (RunService:IsStudio() and Config.Debug.TestStage) then
+	MapBuilder.build()
+end
 VoteService.init()
 CutsceneService.init()
 StoryFlags.init()

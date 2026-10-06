@@ -96,8 +96,8 @@ Config.SoundGroups = { "Music", "Ambience", "SFX", "Voice" }
 
 -- Debug helpers that only ever run inside Studio
 Config.Debug = {
-	EnableChatCommands = true, -- /cs CS_xx, /fx <Effect>, /tp <spot> (later phases)
-	TestStage = true, -- build the Phase 1a test stage when no map exists (Studio only)
+	EnableChatCommands = true, -- /cs CS_xx, /fx <Effect>, /tp <spot>, ... (/help)
+	TestStage = false, -- Studio only: true = the small Phase 1a test stage instead of the full map
 	WarnMissingSounds = true, -- warn once per placeholder SoundId (Studio only)
 }
 

@@ -9,6 +9,7 @@
 --   /qte tap|hold|choice|party   run a test QTE
 --   /ach <id>         award an achievement (toast test)
 --   /flags            print the story flags
+--   /tp <spot>        teleport to a screenshot spot (/tp alone lists them) or to a map point
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -18,6 +19,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local CutsceneLibrary = require(Shared:WaitForChild("CutsceneLibrary"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
+local MapData = require(Shared:WaitForChild("World"):WaitForChild("MapData"))
 
 local SSS = script.Parent.Parent
 local CutsceneService = require(SSS:WaitForChild("Services"):WaitForChild("CutsceneService"))
@@ -28,6 +30,7 @@ local ParkourService = require(Systems:WaitForChild("ParkourService"))
 local QTEService = require(Systems:WaitForChild("QTEService"))
 local StoryFlags = require(Systems:WaitForChild("StoryFlags"))
 local ChapterManager = require(SSS:WaitForChild("Story"):WaitForChild("ChapterManager"))
+local MapBuilder = require(SSS:WaitForChild("World"):WaitForChild("MapBuilder"))
 
 local DebugCommands = {}
 
@@ -43,6 +46,7 @@ local ALIASES = {
 	"/qte",
 	"/ach",
 	"/flags",
+	"/tp",
 	"/help",
 }
 
@@ -202,6 +206,30 @@ local function handle(player: Player, text: string)
 	elseif command == "/flags" then
 		for key, value in StoryFlags.get() :: any do
 			print(string.format("  %s = %s", tostring(key), tostring(value)))
+		end
+	elseif command == "/tp" then
+		local spot = MapData.ScreenshotSpots[string.lower(arg)]
+		local root = playerRoot(player)
+		if not root then
+			return
+		end
+		if spot then
+			local pos = Vector3.new(spot.x, spot.y, spot.z) * Config.World.StudsPerBlock
+			local r = math.rad(spot.yaw or 0)
+			root.CFrame = CFrame.lookAt(pos, pos + Vector3.new(math.sin(r), 0, -math.cos(r)))
+		elseif MapData.Points[arg] then
+			root.CFrame = MapBuilder.point(arg) + Vector3.new(0, 3, 0)
+		else
+			local names = {}
+			for name in MapData.ScreenshotSpots do
+				table.insert(names, name)
+			end
+			table.sort(names)
+			print(
+				"[DebugCommands] /tp "
+					.. table.concat(names, " | ")
+					.. "  (or any MapData.Points name)"
+			)
 		end
 	elseif command == "/help" then
 		print("[DebugCommands] " .. table.concat(ALIASES, " "))
