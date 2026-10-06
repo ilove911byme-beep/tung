@@ -22,14 +22,11 @@ local QTEService = require(Systems:WaitForChild("QTEService"))
 local StoryFlags = require(Systems:WaitForChild("StoryFlags"))
 local ThreatService = require(Systems:WaitForChild("ThreatService"))
 local StoryContext = require(script.Parent:WaitForChild("StoryContext"))
+local MapBuilder = require(SSS:WaitForChild("World"):WaitForChild("MapBuilder"))
 
-export type Checkpoint = { anchor: string, offset: Vector3? }
-export type Step = {
-	name: string,
-	checkpoint: Checkpoint?,
-	run: (ctx: StoryContext.Context) -> (),
-}
-export type Chapter = { index: number, title: string, steps: { Step } }
+export type Checkpoint = StoryContext.Checkpoint
+export type Step = StoryContext.Step
+export type Chapter = StoryContext.Chapter
 
 local ChapterManager = {}
 
@@ -47,7 +44,9 @@ local function chapterModule(index: number): Chapter?
 end
 
 local function checkpointCf(cp: Checkpoint): CFrame
-	local cf = Anchors.get(cp.anchor)
+	local cf = if cp.point
+		then MapBuilder.point(cp.point) - Vector3.new(0, 1, 0)
+		else Anchors.get(cp.anchor or "Anchor_Station")
 	if cp.offset then
 		cf = cf * CFrame.new(cp.offset)
 	end

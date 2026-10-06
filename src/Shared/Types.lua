@@ -35,6 +35,14 @@ export type SpeakerId =
 	| "Patapim"
 	| "Bombardiro"
 	| "Cappuccino"
+	| "TrippiTroppi"
+	| "BonecaAmbalabu"
+	| "UdinDinDinDun"
+	| "LaVacaSaturno"
+	| "FrigoCamelo"
+	| "GlorboFruttodrillo"
+	| "Strawberry"
+	| "Banana"
 
 -- Roblox AudioTextToSpeech settings per speaker (voice_lines.md).
 -- pitch is in semitones (-12..12), speed is a multiplier (0.5..2.0).
@@ -228,6 +236,8 @@ export type Cue = {
 	clockTime: number?, -- seconds the time-lapse takes
 	world: string?, -- WorldFx effect name (lights out, shutters, signs...)
 	worldParams: { [string]: any }?,
+	dismount: boolean?, -- the actor stops riding (stays where it is)
+	ride: RideSpec?, -- the actor starts riding another actor
 }
 
 export type Shot = {
@@ -261,10 +271,17 @@ export type Segment = {
 	next: string?,
 }
 
+-- An actor riding another one (players in the minecarts): its root follows the ridden actor's
+-- pivot * offset (studs) until a `dismount` cue.
+export type RideSpec = { actor: string, offset: Vector3, yaw: number? }
+
 export type ActorSpec = {
 	id: string,
-	model: string, -- name of a rig in ServerStorage.Models
+	-- name of a rig in ServerStorage.Models, "@LocalPlayer" (the local character itself) or
+	-- "@Player1".."@Player6" (a stand-in copy of the n-th party member's avatar, by UserId)
+	model: string,
 	at: Point,
+	ride: RideSpec?,
 	face: FaceId?,
 	visible: boolean?,
 	footsteps: boolean?,

@@ -132,6 +132,14 @@ Strings.Speakers = {
 	Patapim = "Brr Brr Patapim",
 	Bombardiro = "Bombardiro Crocodilo",
 	Cappuccino = "Cappuccino Assassino",
+	TrippiTroppi = "Trippi Troppi",
+	BonecaAmbalabu = "Boneca Ambalabu",
+	UdinDinDinDun = "Udin Din Din Dun",
+	LaVacaSaturno = "La Vaca Saturno Saturnita",
+	FrigoCamelo = "Frigo Camelo",
+	GlorboFruttodrillo = "Glorbo Fruttodrillo",
+	Strawberry = "Strawberry",
+	Banana = "Banana",
 } :: { [string]: string }
 
 Strings.Journal = {

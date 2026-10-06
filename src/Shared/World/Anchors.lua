@@ -12,6 +12,11 @@ export type AnchorDef = { x: number, y: number, z: number, yaw: number }
 local Anchors = {}
 
 Anchors.Defs = {
+	-- world origin, facing north: offsets from it are plain world studs (cutscene helpers)
+	Anchor_Origin = { x = 0, y = 0, z = 0, yaw = 0 },
+	-- Lobby place ("Last Stop" station, Phase 5.5): carts leave east into the tunnel (CS-00)
+	Anchor_Lobby_Platform = { x = 20, y = 12, z = 20, yaw = 90 },
+	Anchor_Lobby_Tunnel = { x = 48, y = 12, z = 20, yaw = 90 },
 	Anchor_Tunnel_Exit = { x = 22, y = 12, z = 80, yaw = 90 },
 	Anchor_Valley_Orbit_Center = { x = 80, y = 40, z = 80, yaw = 0 },
 	Anchor_Station = { x = 52, y = 12, z = 80, yaw = 90 },

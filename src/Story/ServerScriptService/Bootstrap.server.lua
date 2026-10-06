@@ -32,6 +32,8 @@ local QTEService = require(Systems:WaitForChild("QTEService"))
 local StoryFlags = require(Systems:WaitForChild("StoryFlags"))
 
 local ChapterManager = require(SSS:WaitForChild("Story"):WaitForChild("ChapterManager"))
+local ChoiceEffects = require(SSS:WaitForChild("Story"):WaitForChild("ChoiceEffects"))
+local NpcService = require(Systems:WaitForChild("NpcService"))
 
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
 
@@ -52,6 +54,8 @@ QTEService.init()
 HidingService.init()
 ClueService.init()
 PartyService.init()
+ChoiceEffects.init()
+NpcService.init()
 
 local usingTestStage = false
 if RunService:IsStudio() then

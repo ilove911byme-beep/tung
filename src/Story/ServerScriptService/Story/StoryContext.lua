@@ -29,9 +29,14 @@ local ParkourService = require(Systems:WaitForChild("ParkourService"))
 local QTEService = require(Systems:WaitForChild("QTEService"))
 local StoryFlags = require(Systems:WaitForChild("StoryFlags"))
 local ThreatService = require(Systems:WaitForChild("ThreatService"))
+local NpcService = require(Systems:WaitForChild("NpcService"))
+local MapBuilder = require(SSS:WaitForChild("World"):WaitForChild("MapBuilder"))
 
 local StoryContext = {}
 StoryContext.__index = StoryContext
+
+-- a checkpoint is a camera anchor (Shared/World/Anchors) or a map point (MapData.Points)
+export type Checkpoint = { anchor: string?, point: string?, offset: Vector3? }
 
 export type Context = typeof(setmetatable(
 	{} :: {
@@ -53,6 +58,8 @@ export type Context = typeof(setmetatable(
 		boss: typeof(BossFramework),
 		hud: typeof(Hud),
 		votes: typeof(VoteService),
+		npcs: typeof(NpcService),
+		map: typeof(MapBuilder),
 	},
 	StoryContext
 ))
@@ -77,6 +84,8 @@ function StoryContext.new(): Context
 		boss = BossFramework,
 		hud = Hud,
 		votes = VoteService,
+		npcs = NpcService,
+		map = MapBuilder,
 	}, StoryContext)
 end
 
@@ -305,6 +314,70 @@ end
 
 function StoryContext.giallinoSay(_self: Context, text: string)
 	Hud.giallinoSay(text)
+end
+
+--- CFrame of a named map point (MapData.Points), 1 stud above its floor.
+function StoryContext.point(_self: Context, name: string): CFrame
+	return MapBuilder.point(name)
+end
+
+--- The same point on the floor (for placing things and NPCs).
+function StoryContext.ground(_self: Context, name: string): CFrame
+	return MapBuilder.point(name) - Vector3.new(0, 1, 0)
+end
+
+--- Shows / hides the Giallino companion that follows every player.
+function StoryContext.companion(_self: Context, visible: boolean)
+	workspace:SetAttribute("CompanionVisible", visible)
+end
+
+--- A sound for everybody, 3D at a position (or 2D when `at` is nil).
+function StoryContext.sfx(_self: Context, name: string, at: Vector3?, volume: number?)
+	Hud.worldFx("sfx", { name = name, at = at, volume = volume })
+end
+
+--- True when the player's character stands inside the box (studs).
+function StoryContext.inside(_self: Context, player: Player, min: Vector3, max: Vector3): boolean
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return false
+	end
+	local p = root.Position
+	return p.X >= min.X
+		and p.X <= max.X
+		and p.Y >= min.Y
+		and p.Y <= max.Y
+		and p.Z >= min.Z
+		and p.Z <= max.Z
+end
+
+--- An anchored, non-colliding helper Part (tracked: removed on wipe / chapter end).
+function StoryContext.newPart(self: Context, props: { [string]: any }): Part
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	for k, v in props do
+		(p :: any)[k] = v
+	end
+	if not p.Parent then
+		p.Parent = workspace
+	end
+	return self:track(p)
+end
+
+export type Step = {
+	name: string,
+	checkpoint: Checkpoint?,
+	run: (ctx: Context) -> (),
+}
+export type Chapter = { index: number, title: string, steps: { Step } }
+
+--- Typed wrapper for chapter step tables.
+function StoryContext.step(s: Step): Step
+	return s
 end
 
 return StoryContext

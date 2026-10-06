@@ -1166,6 +1166,21 @@ local characters: { [string]: CharacterDef } = {
 			},
 		},
 	},
+	BatMark = {
+		kind = "custom",
+		displayName = "Bat mark",
+		colors = {},
+		noTag = true,
+		rootHeight = 0.03,
+		parts = {
+			part({
+				name = "Mark",
+				size = { 0.7, 0.05, 3.4 },
+				color = "#3A2614",
+				transparency = 0.15,
+			}),
+		},
+	},
 	Lever = {
 		kind = "custom",
 		displayName = "Lever",

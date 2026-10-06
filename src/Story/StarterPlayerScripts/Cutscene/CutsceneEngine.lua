@@ -222,6 +222,12 @@ local function fireCue(r: Run, cue: Types.Cue, shot: Types.Shot, cueClock: numbe
 	if actor and cue.visible ~= nil then
 		Actors.setVisible(actor, cue.visible)
 	end
+	if actor and cue.dismount then
+		Actors.setRide(actor, nil)
+	end
+	if actor and cue.ride then
+		Actors.setRide(actor, cue.ride)
+	end
 	if actor and cue.anim then
 		actor.driven = true
 		actor.animator:play(cue.anim, {

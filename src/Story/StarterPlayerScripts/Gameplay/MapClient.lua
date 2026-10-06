@@ -2,7 +2,8 @@
 -- Local life of the map (all purely visual, so it runs on the client):
 --  * the flat clouds drift east and wrap around the valley (map.md section 1)
 --  * models tagged "Spin" turn (the mill wings): attributes SpinAxis ("X"/"Y"/"Z"), SpinSpeed
---  * villager NPCs (tag "NPC") breathe with A-IDLE_BREATH when they are near the camera
+--  * villager NPCs (tag "NPC") breathe with A-IDLE_BREATH when they are near the camera, walk
+--    with A-WALK while the server sets their attribute Walking, loop the animation in Anim
 local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
 
@@ -38,11 +39,39 @@ local function addSpinner(inst: Instance)
 	}
 end
 
+local function refreshNpc(model: Model, a: PoseAnimator.PoseAnimator)
+	local walking = model:GetAttribute("Walking") == true
+	local anim = model:GetAttribute("Anim")
+	if walking then
+		a:play("A-WALK")
+	else
+		a:stop("A-WALK")
+	end
+	local current = model:GetAttribute("_PlayingAnim")
+	if current ~= anim then
+		if typeof(current) == "string" then
+			a:stop(current)
+		end
+		if typeof(anim) == "string" then
+			a:play(anim, { restart = true })
+		end
+		model:SetAttribute("_PlayingAnim", anim)
+	end
+end
+
 local function addNpc(inst: Instance)
 	if inst:IsA("Model") and not npcAnimators[inst] then
-		local a = PoseAnimator.new(inst)
+		local model = inst
+		local a = PoseAnimator.new(model)
 		a:play("A-IDLE_BREATH", { startClock = os.clock() - math.random() * 3 })
-		npcAnimators[inst] = a
+		npcAnimators[model] = a
+		model:GetAttributeChangedSignal("Walking"):Connect(function()
+			refreshNpc(model, a)
+		end)
+		model:GetAttributeChangedSignal("Anim"):Connect(function()
+			refreshNpc(model, a)
+		end)
+		refreshNpc(model, a)
 	end
 end
 

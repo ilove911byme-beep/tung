@@ -11,6 +11,10 @@
 --   bellSwing {tag, times}        the clock tower bell swings by itself
 --   beam {at, duration}           a huge yellow beam into the sky
 --   colorDrain {amount, duration} the colors drain away (Negatino)
+--   shuttersOpen                  every shutter opens again (morning)
+--   sfx {name, at, volume}        a one-shot sound for everybody (3D at `at`)
+--   silence {duration}            every sound group fades to silence, then comes back (CS-04)
+--   loadingScreen {duration, greet} the loading screen plays over everything (CS-00)
 local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
@@ -18,6 +22,7 @@ local TweenService = game:GetService("TweenService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Audio = require(Shared:WaitForChild("Audio"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
+local LoadingScreen = require(Shared:WaitForChild("UI"):WaitForChild("LoadingScreen"))
 
 local WorldFx = {}
 
@@ -270,7 +275,67 @@ local function colorDrain(params: { [string]: any })
 	}):Play()
 end
 
+local function silence(params: { [string]: any })
+	local duration = params.duration or 3
+	local groups = { "Music", "Ambience", "SFX" }
+	local saved: { [string]: number } = {}
+	for _, name in groups do
+		local g = Audio.group(name)
+		saved[name] = g.Volume
+		TweenService:Create(g, TweenInfo.new(0.3), { Volume = 0 }):Play()
+	end
+	task.delay(duration, function()
+		for _, name in groups do
+			TweenService:Create(Audio.group(name), TweenInfo.new(0.2), { Volume = saved[name] })
+				:Play()
+		end
+	end)
+end
+
+local function loadingScreen(params: { [string]: any })
+	task.spawn(LoadingScreen.play, params.duration or 3, params.greet ~= false)
+end
+
+local function sfx(params: { [string]: any })
+	local name = params.name
+	if type(name) ~= "string" then
+		return
+	end
+	local at: Vector3? = params.at
+	local holder: Part? = nil
+	if at then
+		local p = Instance.new("Part")
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.Transparency = 1
+		p.Size = Vector3.one
+		p.Position = at
+		p.Parent = workspace
+		holder = p
+		task.delay(12, function()
+			p:Destroy()
+		end)
+	end
+	Audio.play(name, holder, { volume = params.volume or 0.8 })
+end
+
+local function shuttersOpen()
+	for _, inst in tagged("Shutter") do
+		for _, p in partsOf(inst) do
+			p.Transparency = 1
+			p.CanCollide = false
+		end
+	end
+end
+
 local HANDLERS: { [string]: ({ [string]: any }) -> () } = {
+	shuttersOpen = function()
+		shuttersOpen()
+	end,
+	sfx = sfx,
+	silence = silence,
+	loadingScreen = loadingScreen,
 	blockRecolor = blockRecolor,
 	skyFlicker = skyFlicker,
 	signSwap = signSwap,

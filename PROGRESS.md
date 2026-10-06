@@ -15,7 +15,7 @@
 | 1a — катсцены/анимации/голоса/звук, CS-02 и CS-05 | ✅ | a9c37b9 |
 | 1b — геймплейные системы | ✅ | см. git log |
 | 2 — MapBuilder | ✅ | см. git log |
-| 3 — Пролог + главы 1–2, CS-00…CS-06 | ⏳ | |
+| 3 — Пролог + главы 1–2, CS-00…CS-06 | ✅ | см. git log |
 | 4 — главы 3–4, CS-07…CS-14 | ⏳ | |
 | 5 — главы 5–6, CS-15…CS-23, концовки, служебные | ⏳ | |
 | 5.5 — меню, лобби, очередь, загрузка, телепорт, мемы | ⏳ | |
@@ -120,3 +120,42 @@ Minecraft (булыжный цоколь, бревенчатые углы, до�
 ⚠️ Known issues: в Studio не запускалось; NPC без анимации ходьбы до фаз 3–5 (стоят дома). Текстуры —
 плейсхолдеры (пустые id → материалы). Небесная тропа финала строится главой 6 (по map.md она появляется
 только там).
+
+## Phase 3 — пролог, главы 1–2 ✅
+✅ Done: глава 1 (прибытие: CS-01 → CS-02 с голосованием; туториал — рубка 6 древесины на деревьях
+деревни, фонарь у Chimpanzini с кричалкой, хлеб в пекарне, разговоры с камео, ссора Клубники и Банана у
+фонтана, сплетни Tralalero; паркур за яблоком — лестница из листвы, камни через реку, вода = возврат,
+CLEAN_JUMPS без падений; CS-03; 90 с до таверны в сгущающемся тумане, при опоздании — 2 глитчлинга;
+CHAPTER_1), глава 2 (CS-04 🔒 → голосование: открыть → CS-04A + OPEN_THE_DOOR + флаг sawTungRunning;
+баррикада → общий QTE-бар, провал 15 урона; спрятаться → 5 с на укрытие, «задержи дыхание», провал/не
+спрятался 20 урона; ночь 2 минуты — костёр гаснет за 40 с, дрова из поленницы, при потухшем огне
+глитчлинги лезут в окна, в окнах мелькают морды; CS-05 🔒; утро — дверь Балерины выбита наружу, щепки;
+CS-06; CHAPTER_2). Эффекты выборов (настроение, ачивки только голосовавшим, флаги) — `Story/ChoiceEffects`.
+NpcService (показ/скрытие, ходьба с A-WALK на клиенте, разговоры, кричалка при первой встрече),
+дублёры игроков в катсценах (`@Player1..6` — копии аватаров), посадка в вагонетки (ride/dismount),
+экран загрузки с «Hi, [Name]. :)» на один кадр, эффекты DropItem / ShowPart / HidePart, WorldFx silence /
+loadingScreen / shuttersOpen / sfx, голоса камео (TTS-настройки, цвета, имена, кричалки).
+📁 Files: `src/Shared/Cutscenes/CS_{00,01,03,04,04A,06}.lua`, `src/Shared/CutsceneKit.lua`,
+`src/Shared/UI/LoadingScreen.lua`, `src/Shared/Animations/A_{SIT_CART,STAND_STRETCH,DROP_ITEM,GIVE_ITEM,
+SHOUT,PANIC_ARMS,GASP,HUG,KNOCK_SOFT,TUNG_LOOK_BACK,DOOR_OPEN_SLOW,KNEEL_HOLD_ITEM,SOB_QUIET,POINT,LOOK_UP}.lua`,
+`src/Story/ServerScriptService/Story/{ChoiceEffects.lua,Chapters/Chapter1.lua,Chapters/Chapter2.lua}`,
+`src/Story/ServerScriptService/Systems/NpcService.lua`, VoiceLines (Chapter1/2, Chants), Actors, Effects, WorldFx.
+🎬 Cutscene checklist: CS-00 ✅ (лобби; якоря лобби заданы, сам мир лобби — Phase 5.5), CS-01 ✅,
+CS-02 ✅, CS-03 ✅, CS-04 ✅, CS-04A ✅, CS-05 ✅, CS-06 ✅ (все кадры и тайминги по cutscenes.md,
+проверены `check_data`). Анимации: A-STAND_STRETCH ✅, A-DROP_ITEM ✅, A-GIVE_ITEM ✅, A-SHOUT ✅,
+A-PANIC_ARMS ✅, A-GASP ✅, A-HUG ✅, A-KNOCK_SOFT ✅, A-TUNG_LOOK_BACK ✅, A-DOOR_OPEN_SLOW ✅,
+A-KNEEL_HOLD_ITEM ✅, A-SOB_QUIET ✅ (+ вспомогательные A-SIT_CART, A-POINT, A-LOOK_UP).
+🧪 How to test (Studio, Config.SkipLobby = true): 1) Play → глава 1 стартует сама с CS-01 (вагонетки
+вылетают из туннеля, облёт, табличка «Ballerina», фонарь загорается) → CS-02 с голосованием.
+2) Задачи в HUD: E на деревьях (Chop), E на Chimpanzini (Buy), E на полке в пекарне. 3) Паркур у реки
+(восток от амбара), яблоко наверху. 4) CS-03 → 90 с до таверны. 5) Глава 2: CS-04 → голосование.
+Повтор катсцен: `/cs CS_00`, `/cs CS_01`, `/cs CS_02`, `/cs CS_03`, `/cs CS_04`, `/cs CS_04A`, `/cs CS_05`,
+`/cs CS_06`. Прыжок к главе/шагу: `/chapter 2`, `/chapter 1 parkour`, `/chapter 2 night`.
+Решения (сам):
+- Фонарь у Chimpanzini — бесплатно всей группе («first lantern free»); дрова идут в камин в главе 2.
+- Ночью все жители прячутся (NPC скрыты), утром возвращаются домой, кроме Балерины, Frigo и Udin.
+- В CS-04A настоящая дверь таверны прячется, её играет риг Door; после катсцены Giallino её захлопывает.
+- «Полная тишина» в CS-04 — затухание групп Music/Ambience/SFX на 3.4 с.
+- Скрип тормозов и крик — плейсхолдеры: door_open (быстрее) и TTS-реплика Tralalero.
+⚠️ Known issues: в Studio не запускалось — главы проверены только статически (строгие типы, данные,
+тайминги). Камеры катсцен рассчитаны по координатам карты, без визуальной проверки в движке.

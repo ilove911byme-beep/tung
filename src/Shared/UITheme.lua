@@ -71,6 +71,14 @@ UITheme.Speaker = {
 	Patapim = Color3.fromHex("#8A9A5B"),
 	Bombardiro = Color3.fromHex("#8FA860"),
 	Cappuccino = Color3.fromHex("#C9A27A"),
+	TrippiTroppi = Color3.fromHex("#F08A50"),
+	BonecaAmbalabu = Color3.fromHex("#5EA04E"),
+	UdinDinDinDun = Color3.fromHex("#B48ED8"),
+	LaVacaSaturno = Color3.fromHex("#E0C070"),
+	FrigoCamelo = Color3.fromHex("#C9A06A"),
+	GlorboFruttodrillo = Color3.fromHex("#D84040"),
+	Strawberry = Color3.fromHex("#E04050"),
+	Banana = Color3.fromHex("#F2D24B"),
 } :: { [Types.SpeakerId]: Color3 }
 
 return UITheme

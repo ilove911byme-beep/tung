@@ -32,13 +32,24 @@ EXPECTED = {
         ("main", "5", 21, 26), ("main", "6", 26, 29), ("main", "7", 29, 31), ("main", "8", 31, 40),
         ("main", "9", 40, 43), ("main", "10", 43, 48),
     ],
+    "CS_00": [("main", "1", 0, 3), ("main", "2", 3, 7), ("main", "3", 7, 10), ("main", "4", 10, 14)],
+    "CS_01": [("main", "1", 0, 4), ("main", "2", 4, 14), ("main", "3", 14, 19), ("main", "4", 19, 23),
+              ("main", "5", 23, 27), ("main", "6", 27, 32)],
+    "CS_03": [("main", "1", 0, 5), ("main", "2", 5, 9), ("main", "3", 9, 13), ("main", "4", 13, 17),
+              ("main", "5", 17, 20)],
+    "CS_04": [("main", "1", 0, 5), ("main", "2", 5, 8), ("main", "3", 8, 11), ("main", "4", 11, 15),
+              ("main", "5", 15, 20), ("main", "6", 20, 23), ("main", "7", 23, 26)],
+    "CS_04A": [("main", "1", 0, 3), ("main", "2", 3, 6), ("main", "3", 6, 7), ("main", "4", 7, 10)],
+    "CS_06": [("main", "1", 0, 4), ("main", "2", 4, 9), ("main", "3", 9, 13), ("main", "4", 13, 18),
+              ("main", "5", 18, 22), ("main", "6", 22, 30), ("main", "7", 30, 38)],
     "CS_DOWN": [("main", "1", 0, 2)],
     "CS_DEAD": [("main", "1", 0, 2), ("main", "2", 2, 5)],
     "CS_REVIVE": [("main", "1", 0, 2)],
 }
 
 EFFECTS = ["PixelDissolve", "PixelAssemble", "LastPixel", "Shatter", "Melt", "Grow", "Shrink",
-           "WallBreak", "RootsBridge", "Bloom", "TimeFreeze", "TimeResume"]
+           "WallBreak", "RootsBridge", "Bloom", "TimeFreeze", "TimeResume", "DropItem", "ShowPart",
+           "HidePart"]
 
 SHIMS = r"""
 Vector3 = { new = function(x, y, z) return { X = x, Y = y, Z = z } end }
@@ -65,8 +76,10 @@ def module_expr(src, mapping):
 
 def build():
     parts = [SHIMS]
-    m_types = {r"require\(script\.Parent\.Parent\.Types\)": "__Types", r"require\(script\.Parent\.Types\)": "__Types"}
+    m_types = {r"require\(script\.Parent\.Parent\.Types\)": "__Types", r"require\(script\.Parent\.Types\)": "__Types",
+               r"require\(script\.Parent\.Parent\.CutsceneKit\)": "__CutsceneKit"}
     parts.append("local __Types = {}")
+    parts.append("local __CutsceneKit = " + module_expr(load(os.path.join(SHARED, "CutsceneKit.lua")), m_types))
     parts.append("local __PoseMath = " + module_expr(load(os.path.join(SHARED, "Visual", "PoseMath.lua")), {}))
     parts.append("local __PoseMixer = " + module_expr(load(os.path.join(SHARED, "Visual", "PoseMixer.lua")),
                                                       {r"require\(script\.Parent\.PoseMath\)": "__PoseMath"}))

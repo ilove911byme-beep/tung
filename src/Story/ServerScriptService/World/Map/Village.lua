@@ -882,7 +882,7 @@ local function square(parent: Instance)
 					table_,
 					"NameSign",
 					CFrame.new(Builder.studs(x - 0.06, g + 1.0, z + 0.3))
-						* CFrame.Angles(0, math.rad(-90), 0),
+						* CFrame.Angles(0, math.rad(90), 0),
 					Vector3.new(0.6 * S, 0.3 * S, 0.05 * S),
 					names[nameIndex]
 				)
@@ -988,6 +988,26 @@ local function station(parent: Instance)
 	)
 	torch(model, St.x + St.w - 0.5, g + 2.2, St.z + 1.5)
 	torch(model, St.x + St.w - 0.5, g + 2.2, St.z + St.d - 1.5)
+	-- the lantern at the end of the rails: it lights up by itself, yellow (CS-01 shot 6) and
+	-- Giallino flows out of it (CS-02 shot 1)
+	local lantern = Builder.model(model, "StationLantern")
+	Builder.box(lantern, "Post", 54.35, g, 80.35, 0.3, 1.2, 0.3, "oak_log")
+	local lamp = Builder.box(
+		lantern,
+		"Lamp",
+		54.25,
+		g + 1.2,
+		80.25,
+		0.5,
+		0.6,
+		0.5,
+		"glass",
+		{ color = "#FFF2B0", transparency = 0.3 }
+	)
+	lamp:SetAttribute("WasNeon", true)
+	local light = Builder.light(lamp, "#FFD83A", 14, 1.6)
+	light.Enabled = false
+	tag(lantern, "StationLantern")
 end
 
 local function railsAndTunnel(parent: Instance)

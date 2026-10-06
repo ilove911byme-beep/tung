@@ -313,6 +313,7 @@ function RigFactory.buildAll(): Folder
 			model = buildHumanoid(id, def)
 		end
 		model:SetAttribute("CharacterId", id)
+		model:SetAttribute("DisplayName", def.displayName)
 		model:SetAttribute("DefaultFace", def.face or "neutral")
 		local scale = def.scale
 		if scale and scale ~= 1 then

@@ -47,6 +47,7 @@ export type Actor = {
 	lastAnimScale: number,
 	external: boolean, -- the local player's own character: not cloned, moved or destroyed
 	driven: boolean, -- external actors are only posed after a cue animates them
+	ride: Types.RideSpec?,
 }
 
 export type Registry = {
@@ -119,12 +120,22 @@ function Actors.spawn(
 					lastAnimScale = 1,
 					external = true,
 					driven = false,
+					ride = nil,
 				}
 				registry.byId[spec.id] = own
 			end
 			continue
 		end
-		local template = runtime:WaitForChild(modelName, 5)
+		local standIn = string.match(modelName, "^@Player(%d)$")
+		local template: Instance? = nil
+		if standIn then
+			template = Actors.standIn(tonumber(standIn) :: number)
+			if not template then
+				continue -- fewer players than stand-in slots
+			end
+		else
+			template = runtime:WaitForChild(modelName, 5)
+		end
 		if not template or not template:IsA("Model") then
 			warn(string.format("[Actors] %s: model %s did not arrive", data.id, modelName))
 			continue
@@ -151,6 +162,7 @@ function Actors.spawn(
 			lastAnimScale = 1,
 			external = false,
 			driven = true,
+			ride = spec.ride,
 		}
 		for _, d in model:GetDescendants() do
 			if d:IsA("BasePart") then
@@ -196,6 +208,64 @@ function Actors.spawn(
 		end
 	end
 	return registry
+end
+
+--- A cutscene copy of the n-th party member's avatar (players sorted by UserId), ready to be
+--- posed: anchored root, no collisions, no scripts, Humanoid kept for clothing. nil if no such
+--- player.
+function Actors.standIn(n: number): Model?
+	local list = game:GetService("Players"):GetPlayers()
+	table.sort(list, function(a, b)
+		return a.UserId < b.UserId
+	end)
+	local player = list[n]
+	local character = player and player.Character
+	if not character then
+		return nil
+	end
+	local wasArchivable = character.Archivable
+	character.Archivable = true
+	local copy = character:Clone()
+	character.Archivable = wasArchivable
+	if not copy then
+		return nil
+	end
+	for _, d in copy:GetDescendants() do
+		if d:IsA("BaseScript") or d:IsA("Sound") then
+			d:Destroy()
+		elseif d:IsA("BasePart") then
+			d.CanCollide = false
+			d.CanQuery = false
+			d.CanTouch = false
+			d.LocalTransparencyModifier = 0
+			d.Anchored = d.Name == "HumanoidRootPart"
+		elseif d:IsA("Decal") then
+			d.LocalTransparencyModifier = 0
+		end
+	end
+	local humanoid = copy:FindFirstChildOfClass("Humanoid")
+	local root = copy:FindFirstChild("HumanoidRootPart")
+	if humanoid then
+		humanoid.EvaluateStateMachine = false
+		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		local animator = humanoid:FindFirstChildOfClass("Animator")
+		if animator then
+			animator:Destroy()
+		end
+	end
+	if root and root:IsA("BasePart") then
+		copy.PrimaryPart = root
+		local hip = if humanoid then humanoid.HipHeight else 2
+		copy:SetAttribute("RootHeight", hip + root.Size.Y / 2)
+	end
+	copy:SetAttribute("StandInFor", player.UserId)
+	return copy
+end
+
+--- Starts / stops riding (minecarts).
+function Actors.setRide(actor: Actor, ride: Types.RideSpec?)
+	actor.ride = ride
+	actor.motion = nil
 end
 
 function Actors.get(registry: Registry, id: string): Actor?
@@ -355,7 +425,13 @@ end
 --- Moves and animates every actor. Call once per frame.
 function Actors.update(registry: Registry)
 	local now = registry.clock()
+	-- riders last, so they follow the ridden actor's pose of this frame
+	local riders: { Actor } = {}
 	for _, actor in registry.byId do
+		if actor.ride and not actor.external then
+			table.insert(riders, actor)
+			continue
+		end
 		if actor.external then
 			if actor.driven then
 				actor.animator:step()
@@ -370,6 +446,17 @@ function Actors.update(registry: Registry)
 				actor.lastAnimScale = scale
 				actor.model:ScaleTo(math.max(scale, 0.01))
 			end
+			actor.model:PivotTo(actor.baseCf * actor.animator:getRootOffset())
+		end
+	end
+	for _, actor in riders do
+		local ride = actor.ride :: Types.RideSpec
+		local mount = registry.byId[ride.actor]
+		if mount and mount.model.Parent and actor.model.Parent then
+			actor.baseCf = mount.model:GetPivot()
+				* CFrame.new(ride.offset)
+				* CFrame.Angles(0, math.rad(ride.yaw or 0), 0)
+			actor.animator:step()
 			actor.model:PivotTo(actor.baseCf * actor.animator:getRootOffset())
 		end
 	end

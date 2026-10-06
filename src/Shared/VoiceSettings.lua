@@ -21,6 +21,15 @@ local VoiceSettings: { [Types.SpeakerId]: Types.VoiceSettings } = {
 	Negatino = { voiceId = "10", pitch = -10, speed = 0.7, volume = 1, villager = false },
 	Crudelino = { voiceId = "10", pitch = -12, speed = 1.3, volume = 1.3, villager = false },
 	GiallinoTotale = { voiceId = "10", pitch = -6, speed = 0.9, volume = 1.3, villager = false },
+	-- daytime cameos (voice_lines.md, lobby & meme lines)
+	TrippiTroppi = { voiceId = "7", pitch = 3, speed = 1.2, volume = 1, villager = true },
+	BonecaAmbalabu = { voiceId = "5", pitch = -5, speed = 0.85, volume = 1, villager = true },
+	UdinDinDinDun = { voiceId = "3", pitch = 2, speed = 1.15, volume = 1, villager = true },
+	LaVacaSaturno = { voiceId = "6", pitch = -2, speed = 0.8, volume = 1, villager = true },
+	FrigoCamelo = { voiceId = "7", pitch = -1, speed = 1.0, volume = 1, villager = true },
+	GlorboFruttodrillo = { voiceId = "5", pitch = 0, speed = 1.1, volume = 1, villager = true },
+	Strawberry = { voiceId = "8", pitch = 5, speed = 1.2, volume = 1, villager = true },
+	Banana = { voiceId = "7", pitch = 2, speed = 1.15, volume = 1, villager = true },
 }
 
 return VoiceSettings
