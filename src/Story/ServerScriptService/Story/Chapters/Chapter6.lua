@@ -261,11 +261,21 @@ local function skyPath(ctx: Ctx)
 		return os.clock() - started > 360
 	end, nil, 0.5)
 	ctx:clearObjective()
-	local down = CFrame.new(blocks(FINISH.X + 2, 12, FINISH.Z + 2))
-	for i, p in ctx:players() do
+	local stragglers = {}
+	for _, p in ctx:players() do
 		local root = rootOf(p)
 		if p.Character and (not root or root.Position.Y > 13.5 * S or course:isRunning(p)) then
-			p.Character:PivotTo(down * CFrame.new((i - 1) * 2.5, 3, 0))
+			table.insert(stragglers, p)
+		end
+	end
+	course:destroy() -- or it keeps "catching falls" in the village and the tower below
+	-- down where the ladder ends, north of Boneca's house (x 98-103, z 57-62)
+	for i, p in stragglers do
+		local character = p.Character
+		if character then
+			character:PivotTo(
+				CFrame.new(blocks(FINISH.X + 1.6 - (i - 1) * 0.7, 12, 54.5) + Vector3.new(0, 3, 0))
+			)
 		end
 	end
 end
@@ -317,16 +327,36 @@ local function darkness(ctx: Ctx)
 	task.delay(5, function()
 		ctx:say("C6_NARR_CARRY")
 	end)
-	-- the gears must be with somebody
-	if #carriers(ctx) == 0 then
-		local alive = ctx:alive()
-		if #alive > 0 then
-			ctx.inv.add(
-				alive[math.random(1, #alive)],
-				"truth_gear",
-				math.max(ctx.flags.get().gears, 3)
-			)
+	-- the gears must be with somebody: a holder who died or left hands them to someone alive
+	local function gearsSomewhere(): boolean
+		for _, p in ctx:players() do
+			local state = p:GetAttribute("LifeState")
+			if (state == "Alive" or state == "Downed") and ctx.inv.has(p, "truth_gear") then
+				return true
+			end
 		end
+		return false
+	end
+	local function handOutGears()
+		local alive = ctx:alive()
+		for k = #alive, 2, -1 do
+			local m = math.random(1, k)
+			alive[k], alive[m] = alive[m], alive[k]
+		end
+		for _, p in alive do
+			-- make room: chapter 5 leftovers go first
+			for _, junk in { "stone", "flare", "oil_bottle" } do
+				while ctx.inv.has(p, junk) do
+					ctx.inv.remove(p, junk, 1)
+				end
+			end
+			if ctx.inv.add(p, "truth_gear", 3) == 0 then
+				return
+			end
+		end
+	end
+	if not gearsSomewhere() then
+		handOutGears()
 	end
 	ctx.inv.setFuelDrain(true)
 	local slowed: { [Player]: boolean } = {}
@@ -341,6 +371,9 @@ local function darkness(ctx: Ctx)
 	local nextHurt: { [Player]: number } = {}
 	while true do
 		task.wait(0.25)
+		if not gearsSomewhere() then
+			handOutGears()
+		end
 		local holders = carriers(ctx)
 		if #holders == 0 then
 			-- every carrier is down: their gears wait for a teammate to revive them
@@ -349,10 +382,9 @@ local function darkness(ctx: Ctx)
 		local alive = ctx:alive()
 		local allThere = true
 		for _, h in holders do
-			if not slowed[h] then
-				slowed[h] = true
-				setSpeed(h, CARRY_SPEED)
-			end
+			-- every tick: a revive puts the walk speed back to normal
+			slowed[h] = true
+			setSpeed(h, CARRY_SPEED)
 			local root = rootOf(h)
 			if not root then
 				continue
@@ -401,6 +433,15 @@ local function darkness(ctx: Ctx)
 	ctx.threats.clear()
 	ctx:clearObjective()
 	Hud.worldFx("colorDrain", { amount = 0, duration = 1 })
+	-- the dark phase is over: speed, fuel, fog and lamps back for the climb and the finale
+	ctx.inv.setFuelDrain(false)
+	for p in slowed do
+		setSpeed(p, 16)
+	end
+	table.clear(slowed)
+	ctx.atmosphere.fog(140, 2)
+	ctx:glitch("lightsOn", { tag = "Lamp" })
+	ctx:preset("finale", 2)
 end
 
 ------------------------------------------------------------------ phase 3: the climb (Crudelino)
@@ -545,7 +586,11 @@ local function climb(ctx: Ctx)
 						local r = rootOf(q)
 						if r and (r.Position - wallAt).Magnitude < 9 then
 							ctx.health.damage(q, WALL_DAMAGE, "crudelino")
-							r.AssemblyLinearVelocity = (c - wallAt).Unit * 30
+							Hud.worldFxFor(
+								{ q },
+								"knockback",
+								{ velocity = (c - wallAt).Unit * 30 }
+							)
 						end
 					end
 				end

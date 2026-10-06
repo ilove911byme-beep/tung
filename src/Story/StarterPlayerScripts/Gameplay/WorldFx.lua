@@ -22,6 +22,7 @@
 --   credits {ending, duration}    the ending title and the credits
 --   blind {duration, opacity}     the screen goes dark for a moment (Negatino's touch)
 --   blackout {duration}           fade through black (scene transitions)
+--   knockback {velocity}          throws the local character (the client owns its physics)
 --   convergeBeams {from, to, duration} beams from points meet in one (CS-11)
 --   debrisBurst {at, count}       chunks burst outward (CS-13 bell tower)
 --   sfx {name, at, volume}        a one-shot sound for everybody (3D at `at`)
@@ -438,6 +439,15 @@ local function blind(params: { [string]: any })
 	end)
 end
 
+-- a hit throws your own character (server-set velocities are overwritten by the owning client)
+local function knockback(params: { [string]: any })
+	local character = game:GetService("Players").LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if root and root:IsA("BasePart") and typeof(params.velocity) == "Vector3" then
+		root.AssemblyLinearVelocity = params.velocity
+	end
+end
+
 -- digits appear one by one on the mine keypad (CS-15)
 local function keypadDigits(params: { [string]: any })
 	for _, pad in tagged("MineKeypad") do
@@ -594,6 +604,7 @@ local HANDLERS: { [string]: ({ [string]: any }) -> () } = {
 		StoryScreens.credits(params.ending or "dawn", params.duration or 30)
 	end,
 	blind = blind,
+	knockback = knockback,
 	blackout = function(params: { [string]: any })
 		blind({ duration = params.duration or 1.5, opacity = 1 })
 	end,

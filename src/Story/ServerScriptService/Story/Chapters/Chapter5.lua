@@ -93,7 +93,7 @@ end
 local function everyoneTo(ctx: Ctx, cf: CFrame)
 	ctx:glitch("blackout", { duration = 1.4 })
 	task.wait(0.5)
-	ctx:teleport(cf, 3)
+	ctx:teleport(cf, 1.5)
 end
 
 --- A Truth Gear lying at a ground CFrame; yields until somebody takes it.
@@ -260,7 +260,9 @@ local function ride(ctx: Ctx)
 	end
 	ctx:music("chase")
 	ctx:sfx("amb_minecart_loop", nil, 0.8)
-	ctx:say("C5_NARR_RIDE")
+	task.spawn(ctx.say, ctx, "C5_NARR_RIDE")
+	-- one window per event, long enough for the last cart to reach the fork / beam too
+	local window = 1.6 + (#riders - 1) * TrackPath.gap / TrackPath.speed
 	for _, e in rideEvents() do
 		local at = start + TrackPath.leadTime(e.dist, #riders)
 		local untilQte = at - 1.1 - workspace:GetServerTimeNow()
@@ -280,7 +282,7 @@ local function ride(ctx: Ctx)
 		end
 		if #seated > 0 then
 			local results =
-				ctx.qte.run(seated, { type = "choice", answer = e.answer, window = 1.6 })
+				ctx.qte.run(seated, { type = "choice", answer = e.answer, window = window })
 			for _, p in seated do
 				if not results[p] then
 					ctx.flags.set("perfectRide", false)
@@ -313,6 +315,27 @@ end
 
 ------------------------------------------------------------------ 5-3 frozen Lirili
 
+local frozenLirili: Model? = nil
+
+--- She stays frozen mid-step in the lab for the rest of the chapter (re-made after a wipe).
+local function ensureLirili(ctx: Ctx)
+	local existing = frozenLirili
+	if existing and existing.Parent then
+		return
+	end
+	local lirili = animated("Lirili", "A-FROZEN_STEP")
+	if lirili then
+		lirili:SetAttribute("Face", "sad")
+		lirili:PivotTo(
+			ctx:ground("LiriliFrozen")
+				* CFrame.new(0, (lirili:GetAttribute("RootHeight") :: number?) or 0, 0)
+		)
+		lirili.Parent = workspace
+		ctx:track(lirili)
+		frozenLirili = lirili
+	end
+end
+
 local function lab(ctx: Ctx)
 	ctx:objective("C5_LAB")
 	local minL, maxL = roomBox(MapData.Caves.Lab)
@@ -324,22 +347,13 @@ local function lab(ctx: Ctx)
 	ctx:clearObjective()
 	ctx:preset("cave", 0)
 	ctx:cutscene("CS_16")
-	-- she stays frozen mid-step for the rest of the chapter
-	local lirili = animated("Lirili", "A-FROZEN_STEP")
-	if lirili then
-		lirili:SetAttribute("Face", "sad")
-		lirili:PivotTo(
-			ctx:ground("LiriliFrozen")
-				* CFrame.new(0, (lirili:GetAttribute("RootHeight") :: number?) or 0, 0)
-		)
-		lirili.Parent = workspace
-		ctx:track(lirili)
-	end
+	ensureLirili(ctx)
 end
 
 ------------------------------------------------------------------ 5-4 the three Truth Gears
 
 local function gearLevers(ctx: Ctx)
+	ensureLirili(ctx)
 	ctx:objective("C5_DIARY")
 	local L = MapData.Caves.Lab
 	local diary = ctx:newPart({
@@ -363,8 +377,9 @@ local function gearLevers(ctx: Ctx)
 			end
 		end
 	)
+	local stepDone = false
 	task.delay(50, function()
-		if not read and diary.Parent then
+		if not read and not stepDone and diary.Parent then
 			read = true
 			ctx:say("C5_NARR_LEVERS")
 			ctx:objective("C5_GEAR1")
@@ -456,6 +471,8 @@ local function gearLevers(ctx: Ctx)
 		)
 	end
 	solved.Event:Wait()
+	stepDone = true
+	diary:Destroy()
 	ctx:sfx("clock_time_stop", blocks(131, -14, 52), 0.6)
 	ctx:clearObjective()
 	gearPickup(ctx, ctx:ground("LeverGear"))
@@ -525,6 +542,7 @@ local LAVA: ParkourService.SegmentDef = {
 }
 
 local function gearLava(ctx: Ctx)
+	ensureLirili(ctx)
 	ctx:objective("C5_GEAR2")
 	local L = MapData.Caves.Lava
 	local lavaTop = MapData.LavaLevel * S
@@ -566,7 +584,18 @@ local function gearLava(ctx: Ctx)
 	course.Finished:Connect(function(p: Player, noFalls: boolean)
 		clean[p] = noFalls
 	end)
-	course:track(ctx:alive(), true)
+	-- line up along the start platform (z), the cave wall is right behind it in +x
+	local lineup = ctx:alive()
+	course:track(lineup, false)
+	for i, p in lineup do
+		if p.Character then
+			p.Character:PivotTo(
+				CFrame.new(
+					blocks(116.5, -20, 49 + (i - (#lineup + 1) / 2) * 0.6) + Vector3.new(0, 3, 0)
+				) * CFrame.Angles(0, math.rad(90), 0)
+			)
+		end
+	end
 	if ctx.flags.get().jailed ~= "Cappuccino" then
 		task.delay(5, function()
 			ctx.npcs.show("Cappuccino", true)
@@ -616,11 +645,13 @@ local function gearLava(ctx: Ctx)
 		end
 	end
 	active = false
+	course:destroy() -- or it keeps "catching falls" far below in the mine
 	ctx:clearObjective()
 	everyoneTo(ctx, ctx:ground("MazeStart"))
 end
 
 local function gearMaze(ctx: Ctx)
+	ensureLirili(ctx)
 	ctx:objective("C5_GEAR3")
 	ctx:say("C5_NARR_MAZE")
 	ctx.atmosphere.fog(26, 1.5)
@@ -808,7 +839,7 @@ local function crudelino(ctx: Ctx)
 		phases = {},
 	})
 	boss:card()
-	boss:arena(center, 36)
+	boss:arena(center, 54) -- the flare piles stand near the walls
 	ctx:track(function()
 		boss:cleanup()
 	end)
@@ -900,8 +931,11 @@ local function crudelino(ctx: Ctx)
 					hitCooldown[p] = now + 1.5
 					ctx.health.damage(p, DASH_DAMAGE, "crudelino")
 					ctx.flags.set("untouchable", false)
-					root.AssemblyLinearVelocity = (root.Position - pos).Unit * 60
-						+ Vector3.new(0, 40, 0)
+					Hud.worldFxFor(
+						{ p },
+						"knockback",
+						{ velocity = (root.Position - pos).Unit * 60 + Vector3.new(0, 40, 0) }
+					)
 				end
 			end
 			for _, c in columns do
@@ -1018,7 +1052,7 @@ local function crudelino(ctx: Ctx)
 					Name = "Bomb",
 					Shape = Enum.PartType.Ball,
 					Size = Vector3.new(2.4, 2.4, 2.4),
-					CFrame = CFrame.new(Vector3.new(at.X, hole.Y - 30, at.Z)),
+					CFrame = CFrame.new(Vector3.new(at.X, (C.y + C.h) * S - 2, at.Z)),
 					Color = Color3.fromRGB(30, 30, 34),
 					Material = Enum.Material.Metal,
 				})
@@ -1236,6 +1270,7 @@ local function crudelino(ctx: Ctx)
 			p.Character:PivotTo(top * CFrame.new((i - 1) * 2.5 - 6, 3, 0))
 		end
 	end
+	course:destroy()
 	ctx:award("BEAT_CRUDELINO")
 	if ctx.flags.get().untouchable then
 		ctx:award("UNTOUCHABLE")
