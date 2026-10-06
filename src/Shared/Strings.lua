@@ -142,6 +142,32 @@ Strings.Speakers = {
 	Banana = "Banana",
 } :: { [string]: string }
 
+-- Story screens (StoryScreens): the old game's question, ending titles and the credits
+Strings.Story = {
+	OldScreenQuestion = "WILL YOU COME BACK TOMORROW?",
+	EndingTitles = {
+		dawn = "DAWN",
+		endless = "ENDLESS NIGHT",
+		sahur = "SAHUR",
+	},
+	Credits = {
+		"Tung Tung Tung Sahur",
+		"Lirili Larila",
+		"Ballerina Cappuccina",
+		"Tralalero Tralala",
+		"Chimpanzini Bananini",
+		"Brr Brr Patapim",
+		"Bombardiro Crocodilo",
+		"Cappuccino Assassino",
+		"and Giallino, the little light",
+		" ",
+		"Trippi Troppi · Boneca Ambalabu · Udin Din Din Dun",
+		"La Vaca Saturno Saturnita · Frigo Camelo · Glorbo Fruttodrillo",
+		"Strawberry · Banana",
+	},
+	ThanksForPlaying = "Say their names. Thanks for playing.",
+}
+
 -- Boss intro cards (cutscenes.md: BOSS INTRO CARD)
 Strings.Bosses = {
 	Falsino = { title = "FALSINO", subtitle = "the Liar" },

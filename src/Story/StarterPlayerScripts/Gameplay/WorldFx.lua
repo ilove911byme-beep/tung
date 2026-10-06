@@ -12,6 +12,14 @@
 --   beam {at, duration}           a huge yellow beam into the sky
 --   colorDrain {amount, duration} the colors drain away (Negatino)
 --   shuttersOpen                  every shutter opens again (morning)
+--   keypadDigits {text, gap}      digits light up on the mine keypad (CS-15)
+--   doorOpen {tag, time}          tagged doors swing to their OpenCFrame (CS-15)
+--   clockHands {turns, duration}  the clock tower hands turn (CS-22)
+--   fireflies {at, toward, count, radius, duration} pixels drift away like fireflies (endings)
+--   tunnelLamps {duration}        yellow square lamps in the tunnel (CS-E2)
+--   oldScreen {duration}          the old game's YES / NO screen (CS-16 shot 7)
+--   nameRoll {names, duration}    the villagers' names roll by (CS-E3 shot 10)
+--   credits {ending, duration}    the ending title and the credits
 --   blind {duration, opacity}     the screen goes dark for a moment (Negatino's touch)
 --   blackout {duration}           fade through black (scene transitions)
 --   convergeBeams {from, to, duration} beams from points meet in one (CS-11)
@@ -29,6 +37,7 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 local LoadingScreen = require(Shared:WaitForChild("UI"):WaitForChild("LoadingScreen"))
 
 local Overlay = require(script.Parent.Parent:WaitForChild("Cutscene"):WaitForChild("Overlay"))
+local StoryScreens = require(script.Parent.Parent:WaitForChild("UI"):WaitForChild("StoryScreens"))
 
 local WorldFx = {}
 
@@ -251,9 +260,9 @@ local function beam(params: { [string]: any })
 	p.CanQuery = false
 	p.CastShadow = false
 	p.Material = Enum.Material.Neon
-	p.Color = Color3.fromRGB(255, 216, 58)
+	p.Color = params.color or Color3.fromRGB(255, 216, 58)
 	p.Transparency = 0.2
-	p.Size = Vector3.new(8, 400, 8)
+	p.Size = Vector3.new(params.width or 8, 400, params.width or 8)
 	p.CFrame = CFrame.new(at + Vector3.new(0, 200, 0))
 	p.Parent = workspace
 	local light = Instance.new("PointLight")
@@ -299,7 +308,12 @@ local function silence(params: { [string]: any })
 end
 
 local function loadingScreen(params: { [string]: any })
-	task.spawn(LoadingScreen.play, params.duration or 3, params.greet ~= false)
+	task.spawn(
+		LoadingScreen.play,
+		params.duration or 3,
+		params.greet ~= false,
+		params.stare == true
+	)
 end
 
 local function sfx(params: { [string]: any })
@@ -396,8 +410,9 @@ local function debrisBurst(params: { [string]: any })
 			at + Vector3.new(math.random() - 0.5, math.random(), math.random() - 0.5) * 8
 		)
 		p.Parent = workspace
-		local vel = Vector3.new(math.random() - 0.5, 0.6 + math.random(), math.random() - 0.5).Unit
-			* (40 + math.random() * 30)
+		local up = if params.down then -(0.3 + math.random()) else 0.6 + math.random()
+		local speed = if params.down then 20 + math.random() * 15 else 40 + math.random() * 30
+		local vel = Vector3.new(math.random() - 0.5, up, math.random() - 0.5).Unit * speed
 		local spin = Vector3.new(math.random(), math.random(), math.random()) * 6
 		local t0 = os.clock()
 		task.spawn(function()
@@ -423,7 +438,161 @@ local function blind(params: { [string]: any })
 	end)
 end
 
+-- digits appear one by one on the mine keypad (CS-15)
+local function keypadDigits(params: { [string]: any })
+	for _, pad in tagged("MineKeypad") do
+		if pad:IsA("BasePart") then
+			local gui = pad:FindFirstChild("Digits") :: SurfaceGui?
+			if not gui then
+				local g = Instance.new("SurfaceGui")
+				g.Name = "Digits"
+				g.Face = Enum.NormalId.Front
+				g.CanvasSize = Vector2.new(120, 120)
+				g.LightInfluence = 0
+				local l = Instance.new("TextLabel")
+				l.Name = "Text"
+				l.BackgroundColor3 = Color3.fromRGB(10, 30, 10)
+				l.Size = UDim2.fromScale(1, 1)
+				l.Font = Enum.Font.Arcade
+				l.TextScaled = true
+				l.TextColor3 = Color3.fromRGB(120, 255, 120)
+				l.Text = ""
+				l.Parent = g
+				g.Parent = pad
+				gui = g
+			end
+			local label = (gui :: SurfaceGui):FindFirstChild("Text") :: TextLabel
+			local text: string = params.text or "67"
+			task.spawn(function()
+				for i = 1, #text do
+					label.Text = string.sub(text, 1, i)
+					Audio.play("button_click", pad, { volume = 0.7 })
+					task.wait(params.gap or 0.8)
+				end
+			end)
+		end
+	end
+end
+
+-- doors that carry OpenCFrame swing open locally (the server opens them too)
+local function doorOpen(params: { [string]: any })
+	for _, d in tagged(params.tag or "MineDoor") do
+		local cf = d:GetAttribute("OpenCFrame")
+		if d:IsA("BasePart") and typeof(cf) == "CFrame" then
+			TweenService
+				:Create(d, TweenInfo.new(params.time or 2, Enum.EasingStyle.Quad), { CFrame = cf })
+				:Play()
+		end
+	end
+end
+
+-- the clock hands turn around their pivot (CS-22): `turns` full minute-hand circles
+local function clockHands(params: { [string]: any })
+	for _, face in tagged("ClockFace") do
+		local hour = face:FindFirstChild("HourHand")
+		local minute = face:FindFirstChild("MinuteHand")
+		if hour and minute and hour:IsA("BasePart") and minute:IsA("BasePart") then
+			local pivot = minute:GetAttribute("Pivot")
+			if typeof(pivot) == "CFrame" then
+				local hStart = pivot:ToObjectSpace(hour.CFrame)
+				local mStart = pivot:ToObjectSpace(minute.CFrame)
+				local turns = params.turns or 1
+				local duration = params.duration or 5
+				task.spawn(function()
+					local t0 = os.clock()
+					while os.clock() - t0 < duration do
+						local a = math.clamp((os.clock() - t0) / duration, 0, 1)
+						local angle = -a * turns * math.pi * 2
+						minute.CFrame = pivot * CFrame.Angles(0, 0, angle) * mStart
+						hour.CFrame = pivot * CFrame.Angles(0, 0, angle / 12) * hStart
+						task.wait()
+					end
+				end)
+			end
+		end
+	end
+end
+
+-- little lights drift out over the valley like fireflies (CS-E1 / CS-E3)
+local function fireflies(params: { [string]: any })
+	local at: Vector3 = params.at or Vector3.zero
+	local count = params.count or 160
+	local radius = params.radius or 160
+	local duration = params.duration or 8
+	local toward: Vector3? = params.toward
+	for _ = 1, count do
+		local p = Instance.new("Part")
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CastShadow = false
+		p.Material = Enum.Material.Neon
+		p.Color = params.color or Color3.fromRGB(255, 226, 120)
+		p.Size = Vector3.new(0.4, 0.4, 0.4)
+		p.Position = at
+		p.Parent = workspace
+		local angle = math.random() * math.pi * 2
+		local goal = if toward
+			then toward + Vector3.new(math.random() - 0.5, math.random() * 0.5, math.random() - 0.5) * 30
+			else at + Vector3.new(
+				math.cos(angle) * radius * math.random(),
+				-math.random() * 60,
+				math.sin(angle) * radius * math.random()
+			)
+		local life = duration * (0.6 + math.random() * 0.4)
+		TweenService:Create(p, TweenInfo.new(life, Enum.EasingStyle.Sine), { Position = goal })
+			:Play()
+		task.delay(life * 0.8, function()
+			TweenService:Create(p, TweenInfo.new(life * 0.2), { Transparency = 1 }):Play()
+		end)
+		task.delay(life + 0.1, function()
+			p:Destroy()
+		end)
+	end
+end
+
+-- yellow, square lamps along the tunnel walls (CS-E2: the loop starts again)
+local function tunnelLamps(params: { [string]: any })
+	local lamps = {}
+	for x = 3, 22, 3 do
+		for _, z in { 78.15, 82.85 } do
+			local p = Instance.new("Part")
+			p.Anchored = true
+			p.CanCollide = false
+			p.Material = Enum.Material.Neon
+			p.Color = Color3.fromRGB(255, 216, 58)
+			p.Size = Vector3.new(1.2, 1.2, 0.2)
+			p.CFrame = CFrame.new(Vector3.new(x, 14.5, z) * 4)
+			p.Parent = workspace
+			local light = Instance.new("PointLight")
+			light.Color = p.Color
+			light.Range = 10
+			light.Parent = p
+			table.insert(lamps, p)
+		end
+	end
+	task.delay(params.duration or 25, function()
+		for _, p in lamps do
+			p:Destroy()
+		end
+	end)
+end
+
 local HANDLERS: { [string]: ({ [string]: any }) -> () } = {
+	keypadDigits = keypadDigits,
+	doorOpen = doorOpen,
+	clockHands = clockHands,
+	fireflies = fireflies,
+	tunnelLamps = tunnelLamps,
+	oldScreen = function(params: { [string]: any })
+		StoryScreens.oldScreen(params.duration or 7)
+	end,
+	nameRoll = function(params: { [string]: any })
+		StoryScreens.nameRoll(params.names or {}, params.duration or 10)
+	end,
+	credits = function(params: { [string]: any })
+		StoryScreens.credits(params.ending or "dawn", params.duration or 30)
+	end,
 	blind = blind,
 	blackout = function(params: { [string]: any })
 		blind({ duration = params.duration or 1.5, opacity = 1 })

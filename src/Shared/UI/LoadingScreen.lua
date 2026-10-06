@@ -158,9 +158,39 @@ function LoadingScreen.show(): Handle
 	return handle
 end
 
---- Plays the whole loading animation over `duration` seconds (CS-00 shot 4).
-function LoadingScreen.play(duration: number, greet: boolean?)
+--- Plays the whole loading animation over `duration` seconds (CS-00 shot 4). `stare` = the
+--- cube is already fully loaded and looks straight at you (CS-E2).
+function LoadingScreen.play(duration: number, greet: boolean?, stare: boolean?)
 	local h = LoadingScreen.show()
+	if stare then
+		h.setProgress(1)
+		local center = h.gui:FindFirstChild("Center", true)
+		if center then
+			for _, spec in
+				{
+					{ 0.44, 0.44 },
+					{ 0.56, 0.44 },
+					{ 0.42, 0.56 },
+					{ 0.46, 0.585 },
+					{ 0.5, 0.59 },
+					{ 0.54, 0.585 },
+					{ 0.58, 0.56 },
+				}
+			do
+				local px = Instance.new("Frame")
+				px.AnchorPoint = Vector2.new(0.5, 0.5)
+				px.Size = UDim2.fromScale(0.045, 0.045)
+				px.Position = UDim2.fromScale(spec[1], spec[2])
+				px.BackgroundColor3 = Color3.fromRGB(30, 22, 6)
+				px.BorderSizePixel = 0
+				px.ZIndex = 5
+				px.Parent = center
+			end
+		end
+		task.wait(duration)
+		h.destroy()
+		return
+	end
 	local start = os.clock()
 	while os.clock() - start < duration do
 		local p = (os.clock() - start) / duration
